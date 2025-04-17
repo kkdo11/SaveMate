@@ -1,4 +1,4 @@
-package kopo.newproject.repository.entity;
+package kopo.newproject.repository.entity.jpa;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,7 +6,6 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Getter
 @NoArgsConstructor
@@ -27,6 +26,7 @@ public class UserInfoEntity {
     @Column(name = "email")
     private String email;
 
+
     @NonNull
     @Column(name = "password", length = 255, nullable = false)
     private String password;
@@ -37,6 +37,11 @@ public class UserInfoEntity {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    // 비밀번호 변경 메서드 (setter 대체)
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
+    }
 
     // 저장되기 전에 자동으로 현재 시간 입력
     @PrePersist

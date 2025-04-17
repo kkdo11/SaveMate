@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- META 태그로 token 전달 -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <meta charset="UTF-8">
+    <title>아이디 찾기</title>
+
+    <script>
+        console.log("🔥 자바스크립트 실행됨");
+    </script>
+
+
+
+
+
+    <!-- ✅ jQuery + Tailwind -->
+    <script src="/js/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- ✅ 전역 CSRF 처리 스크립트 -->
+    <script>
+
+        $(document).ajaxSend(function (e, xhr, options) {
+            const token = $("meta[name='_csrf']").attr("content");
+            const header = $("meta[name='_csrf_header']").attr("content");
+            xhr.setRequestHeader(header, token);
+        });
+
+        $(document).ready(function () {
+            $("#btnLogin").on("click", function () {
+                location.href = "/user/login";
+            });
+
+            $("#btnFindPwd").on("click", function () {
+                location.href = "/user/findPWD";
+            });
+
+            $("#btnUserReg").on("click", function () {
+                location.href = "/user/userRegForm";
+            });
+
+            $("#findIdForm").on("submit", function (e) {
+                e.preventDefault();
+
+                const name = $("#name").val().trim();
+                const email = $("#email").val().trim();
+                const $msg = $("#findIdMsg");
+
+                if (!name || !email) {
+                    $msg.text("이름과 이메일을 모두 입력해주세요.")
+                        .removeClass().addClass("text-red-500 text-sm");
+                    return;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/user/findUserId",
+                    data: { name, email },
+                    success: function (res) {
+                        if (res.result === 1) {
+                            $msg.text(res.msg).removeClass().addClass("text-green-600 text-sm");
+                        } else {
+                            $msg.text("일치하는 아이디가 없습니다.")
+                                .removeClass().addClass("text-red-500 text-sm");
+                        }
+                    },
+                    error: function () {
+                        $msg.text("서버 오류가 발생했습니다. 다시 시도해주세요.")
+                            .removeClass().addClass("text-red-500 text-sm");
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function () {
+            const form = $("#findIdForm");
+
+            if (form.length === 0) {
+                console.error("❌ findIdForm 요소 못 찾음");
+            } else {
+                console.log("✅ findIdForm 요소 찾음");
+            }
+
+            form.on("submit", function (e) {
+                e.preventDefault();
+                console.log("🔥 submit 이벤트 작동됨");
+            });
+        });
+
+    </script>
+</head>
+<body class="bg-white">
+<div class="flex min-h-screen">
+    <!-- 왼쪽 폼 영역 -->
+    <div class="w-1/2 flex flex-col justify-center items-center p-12">
+        <h2 class="text-3xl font-bold mb-8">아이디 찾기</h2>
+        <form id="findIdForm" class="w-full max-w-sm space-y-4">
+            <div>
+                <label for="name" class="block mb-1 text-sm font-medium">이름</label>
+                <input type="text" id="name" name="name"
+                       class="w-full border border-gray-300 rounded-md p-2" required />
+            </div>
+            <div>
+                <label for="email" class="block mb-1 text-sm font-medium">이메일</label>
+                <input type="email" id="email" name="email"
+                       class="w-full border border-gray-300 rounded-md p-2" required />
+            </div>
+            <span id="findIdMsg" class="block text-sm"></span>
+            <button type="submit" class="w-full bg-indigo-500 text-white p-2 rounded-md hover:bg-indigo-600 transition">
+                아이디 찾기
+            </button>
+            <div class="flex justify-between space-x-2">
+                <button id="btnFindPwd" type="button" class="border border-gray-300 px-3 py-1 rounded-md text-sm">
+                    비밀번호 찾기
+                </button>
+                <button id="btnLogin" type="button" class="border border-gray-300 px-3 py-1 rounded-md text-sm">
+                    로그인
+                </button>
+                <button id="btnUserReg" type="button" class="bg-black text-white px-3 py-1 rounded-md text-sm">
+                    회원가입
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 오른쪽 로고 영역 -->
+    <div class="w-1/2 bg-indigo-500 flex items-center justify-center">
+        <img src="/images/logo1.png" alt="Savemate Logo" class="w-80 h-auto rounded-lg shadow-lg" />
+    </div>
+</div>
+
+</body>
+</html>

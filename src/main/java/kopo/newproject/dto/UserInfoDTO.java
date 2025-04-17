@@ -7,7 +7,7 @@ import lombok.Builder;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public record UserInfoDTO(
 
-        String userId,
+        String user_id,
 
         String email,
 

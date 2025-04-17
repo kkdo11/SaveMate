@@ -1,172 +1,471 @@
+<!--
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>회원가입 화면</title>
-  <link rel="stylesheet" href="/css/table.css"/>
-  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-  <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
-  <script type="text/javascript">
-
-    // 아이디 중복체크여부 (중복 Y / 중복아님 : N)
-    let userIdCheck = "Y";
-
-    // HTML로딩이 완료되고, 실행됨
-    $(document).ready(function () {
-      let f = document.getElementById("f"); // form 태그
-
-      // 아이디 중복체크
-      $("#btnUserId").on("click", function () { // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
-        userIdExists(f)
-      })
-
-      // 우편번호 찾기
-      $("#btnAddr").on("click", function () { // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
-        kakaoPost(f);
-      })
-
-      // 회원가입
-      $("#btnSend").on("click", function () { // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
-        doSubmit(f);
-      })
-    })
-
-    // 회원아이디 중복 체크
-    function userIdExists(f) {
-      if (f.userId.value === "") {
-        alert("아이디를 입력하세요.");
-        f.userId.focus();
-        return;
-      }
-      // Ajax 호출해서 회원가입하기
-      $.ajax({
-                url: "/user/getUserIdExists",
-                type: "post", // 전송방식은 Post
-                dataType: "JSON", // 전송 결과는 JSON으로 받기
-                data: $("#f").serialize(), // form 태그 내 input 등 객체를 자동으로 전송할 형태로 변경하기
-                success: function (json) { // 호출이 성공했다면..
-                  if (json.existsYn === "Y") {
-                    alert("이미 가입된 아이디가 존재합니다.");
-                    f.userId.focus();
-                  } else { // 회원가입 실패
-                    alert("가입 가능한 아이디입니다.");
-                    userIdCheck = "N";
-                  }
-                }
-              }
-      )
-    }
-
-
-
-    //회원가입 정보의 유효성 체크하기
-    function doSubmit(f) {
-      if (f.userId.value === "") {
-        alert("아이디를 입력하세요.");
-        f.userId.focus();
-        return;
-      }
-      if (userIdCheck !== "N") {
-        alert("아이디 중복 체크 및 중복되지 않은 아이디로 가입 바랍니다.");
-        f.userId.focus();
-        return;
-      }
-      if (f.name.value === "") {
-        alert("이름을 입력하세요.");
-        f.name.focus();
-        return;
-      }
-      if (f.password.value === "") {
-        alert("비밀번호를 입력하세요.");
-        f.password.focus();
-        return;
-      }
-      if (f.password2.value === "") {
-        alert("비밀번호확인을 입력하세요.");
-        f.password2.focus();
-        return;
-      }
-      if (f.password.value !== f.password2.value) {
-        alert("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
-        f.password.focus();
-        return;
-      }
-      if (f.email.value === "") {
-        alert("이메일을 입력하세요.");
-        f.email.focus();
-        return;
-      }
-
-      // Ajax 호출해서 회원가입하기
-      $.ajax({
-                url: "/user/insertUserInfo",
-                type: "post", // 전송방식은 Post
-                dataType: "JSON", // 전송 결과는 JSON으로 받기
-                data: $("#f").serialize(), // form 태그 내 input 등 객체를 자동으로 전송할 형태로 변경하기
-                success: function (json) { // /user/insertUserInfo 호출이 성공했다면..
-                  if (json.result === 1) { // 회원가입 성공
-                    alert(json.msg); // 메시지 띄우기
-                    location.href = "/user/login"; // 로그인 페이지 이동
-                  } else { // 회원가입 실패
-                    alert(json.msg); // 메시지 띄우기
-                  }
-                }
-              }
-      )
-    }
-  </script>
+  <title>회원가입</title>
+  <link rel="stylesheet" href="/css/userReg.css"> &lt;!&ndash; CSS 경로 맞게 설정 &ndash;&gt;
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-<h2>회원 가입하기</h2>
-<hr/>
-<br/>
-<form id="f">
-  <div class="divTable minimalistBlack">
-    <div class="divTableBody">
-      <div class="divTableRow">
-        <div class="divTableCell">* 아이디
-        </div>
-        <div class="divTableCell">
-          <input type="text" name="userId" style="width:80%" placeholder="아이디"/>
-          <button id="btnUserId" type="button">아이디 중복체크</button>
-        </div>
-      </div>
-      <div class="divTableRow">
-        <div class="divTableCell">* 이름
-        </div>
-        <div class="divTableCell">
-          <input type="text" name="name" style="width:95%" placeholder="이름"/>
-        </div>
-      </div>
-      <div class="divTableRow">
-        <div class="divTableCell">* 비밀번호
-        </div>
-        <div class="divTableCell">
-          <input type="password" name="password" style="width:95%" placeholder="비밀번호"/>
-        </div>
-      </div>
-      <div class="divTableRow">
-        <div class="divTableCell">* 비밀번호확인
-        </div>
-        <div class="divTableCell">
-          <input type="password" name="password2" style="width:95%" placeholder="비밀번호 확인"/>
-        </div>
-      </div>
-      <div class="divTableRow">
-        <div class="divTableCell">* 이메일
-        </div>
-        <div class="divTableCell">
-          <input type="email" name="email" style="width:95%" placeholder="이메일주소"/>
-        </div>
-      </div>
+<div class="standard-sign-in">
+  <form id="registerForm" th:action="@{/user/register}" method="post">
+    <h2>회원가입</h2>
 
 
-      </div>
+
+
+    <div class="textbox">
+      <label for="user_id">아이디</label>
+      <input type="text" id="user_id" name="user_id" required>
+      <button type="button" id="btnUserId">중복확인</button>
+      <span id="userIdMsg"></span>
     </div>
+
+    <div class="textbox">
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+
+    <div class="textbox">
+      <label for="password2">비밀번호 확인</label>
+      <input type="password" id="password2" required>
+      <span id="pwdCheckMsg"></span>
+    </div>
+
+    <div class="textbox">
+      <label for="email">이메일</label>
+      <input type="email" id="email" name="email" required>
+      <button type="button" id="btnSendVerification">인증코드 발송</button>
+      <span id="emailMsg"></span>
+    </div>
+
+    <div class="textbox">
+      <label for="emailCode">인증코드 입력</label>
+      <input type="text" id="emailCode">
+      <button type="button" id="btnVerifyCode">확인</button>
+      <span id="emailCodeMsg"></span>
+    </div>
+
+
+    <div class="textbox">
+      <label for="name">이름</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+
+    <button type="submit" id="btnSend">가입하기</button>
+
+  </form>
+
+
+
+<script>
+  $(document).ready(function () {
+    let emailVerified = false;
+
+    $("#btnUserId").click(function () {
+      const user_id = $("#user_id").val().trim();
+
+      if (!user_id) {
+        $("#userIdMsg").text("아이디를 입력해주세요.").css("color", "red");
+        return;
+      }
+
+
+      $.ajax({
+        url: "/user/getUserIdExists",
+        type: "get",
+        data: { user_id: user_id },
+        success: function (res) {
+
+          console.log(res)
+          if (res.exist_yn === "Y") {
+            $("#userIdMsg").text("이미 사용 중인 아이디입니다.").css("color", "red");
+          } else {
+            $("#userIdMsg").text("사용 가능한 아이디입니다.").css("color", "green");
+          }
+        }
+      });
+
+    });
+
+
+    $("#btnSendVerification").click(function () {
+      const email = $("#email").val();
+
+      if (!email) {
+        alert("이메일을 입력해주세요.");
+        return;
+      }
+
+      $.ajax({
+        url: "/user/sendVerificationEmail",
+        type: "POST",
+        data: { email: email },
+        success: function (res) {
+          if (res.result === 1) {
+            alert(res.msg);  // "인증 메일이 전송되었습니다."
+          } else {
+            alert(res.msg);  // "메일 전송 실패."
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error("이메일 인증 요청 실패:", error);
+          alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+        }
+      });
+    });
+
+
+    $("#btnVerifyCode").click(function () {
+      const code = $("#emailCode").val();
+      const email = $("#email").val(); // 이메일 값도 함께 전송해야 함
+
+      if (!code || !email) {
+        alert("이메일과 인증 코드를 모두 입력해주세요.");
+        return;
+      }
+
+      $.ajax({
+        url: "/user/verifyEmailCode",
+        type: "POST",
+        data: {
+          email: email,
+          code: code
+        },
+        success: function (res) {
+          if (res.result === 1) {
+            emailVerified = true;
+            $("#emailCodeMsg").text("인증 성공").css("color", "green");
+          } else {
+            $("#emailCodeMsg").text("인증 실패").css("color", "red");
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error("인증 요청 실패:", error);
+          alert("서버 오류가 발생했습니다.");
+        }
+      });
+    });
+
+
+    $("#password2").on("input", function () {
+      const pw1 = $("#password").val();
+      const pw2 = $("#password2").val();
+      if (pw1 !== pw2) {
+        $("#pwdCheckMsg").text("비밀번호가 일치하지 않습니다.").css("color", "red");
+      } else {
+        $("#pwdCheckMsg").text("비밀번호 일치").css("color", "green");
+      }
+    });
+
+    $("#registerForm").on("submit", function (e) {
+      if (!emailVerified) {
+        e.preventDefault();
+        alert("이메일 인증을 완료해야 합니다.");
+      }
+    });
+  });
+
+  $("#btnSend").click(function (e) {
+    e.preventDefault();
+
+    const userData = {
+      user_id: $("#user_id").val().trim(),
+      password: $("#password").val().trim(),
+      email: $("#email").val().trim(),
+      name: $("#name").val().trim()
+    };
+
+    $.ajax({
+      url: "/user/insertUserInfo",
+      type: "POST",
+      data: userData,
+      success: function (res) {
+        alert(res.msg);
+        if (res.result === 1) {
+          location.href = "/user/login";
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+  <meta charset="UTF-8">
+  <title>회원가입</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ajaxSend(function (e, xhr, options) {
+    const token = $("meta[name='_csrf']").attr("content");
+    const header = $("meta[name='_csrf_header']").attr("content");
+    xhr.setRequestHeader(header, token);
+  });
+  </script>
+  <script>
+
+
+
+    $(document).ready(function () {
+      let emailVerified = false;
+
+      // ID 중복 확인
+      $("#btnUserId").click(function () {
+        const user_id = $("#user_id").val().trim();
+        const $msg = $("#userIdMsg");
+
+        if (!user_id) {
+          $msg.text("아이디를 입력해주세요.").removeClass().addClass("text-sm text-red-500");
+          return;
+        }
+
+        $.ajax({
+          url: "/user/getUserIdExists",
+          type: "get",
+          data: { user_id },
+          success: function (res) {
+            if (res.exist_yn === "Y") {
+              $msg.text("이미 사용 중인 아이디입니다.").removeClass().addClass("text-sm text-red-500");
+            } else {
+              $msg.text("사용 가능한 아이디입니다.").removeClass().addClass("text-sm text-green-600");
+            }
+          }
+        });
+      });
+
+      // 이메일 인증코드 발송
+      $("#btnSendVerification").click(function () {
+        const email = $("#email").val().trim();
+        const $msg = $("#emailMsg");
+
+        if (!email) {
+          $msg.text("이메일을 입력해주세요.").removeClass().addClass("text-sm text-red-500");
+          return;
+        }
+
+        // ✅ 이메일 중복 여부 먼저 체크
+        $.ajax({
+          url: "/user/getEmailExists",
+          type: "POST",
+          data: { email },
+          success: function (res) {
+            if (res.exist_yn === "Y") {
+              $msg.text("이미 사용 중인 이메일입니다.").removeClass().addClass("text-sm text-red-500");
+              return;
+            }
+
+            // ✅ 이메일이 중복되지 않은 경우에만 메일 발송
+            $.ajax({
+              url: "/user/sendVerificationEmail",
+              type: "POST",
+              data: { email },
+              success: function (res) {
+                if (res.msg === "이메일을 확인하세요.") {
+                  $msg.text(res.msg).removeClass().addClass("text-sm text-red-600");
+                } else {
+                  $msg.text(res.msg).removeClass().addClass("text-sm text-green-600");
+                }
+              },
+              error: function () {
+                $msg.text("서버 오류가 발생했습니다.").removeClass().addClass("text-sm text-red-500");
+              }
+            });
+          },
+          error: function () {
+            $msg.text("이메일 중복 체크 중 오류 발생").removeClass().addClass("text-sm text-red-500");
+          }
+        });
+      });
+
+
+      // 이메일 인증코드 확인
+      $("#btnVerifyCode").click(function () {
+        const email = $("#email").val().trim();
+        const code = $("#emailCode").val().trim();
+        const $msg = $("#emailCodeMsg");
+
+        if (!email || !code) {
+          $msg.text("이메일과 인증 코드를 모두 입력해주세요.").removeClass().addClass("text-sm text-red-500");
+          return;
+        }
+
+        $.ajax({
+          url: "/user/verifyEmailCode",
+          type: "POST",
+          data: { email, code },
+          success: function (res) {
+            if (res.result === 1) {
+              emailVerified = true;
+              $msg.text("인증 성공").removeClass().addClass("text-sm text-green-600");
+            } else {
+              $msg.text("인증 실패").removeClass().addClass("text-sm text-red-500");
+            }
+          }
+        });
+      });
+
+      // 비밀번호 확인
+      $("#password2").on("input", function () {
+        const pw1 = $("#password").val();
+        const pw2 = $("#password2").val();
+        const $msg = $("#pwdCheckMsg");
+
+        if (pw1 !== pw2) {
+          $msg.text("비밀번호가 일치하지 않습니다.").removeClass().addClass("text-sm text-red-500");
+        } else {
+          $msg.text("비밀번호 일치").removeClass().addClass("text-sm text-green-600");
+        }
+      });
+
+      // 회원가입 버튼 클릭 시 검증
+      $("#btnSend").click(function (e) {
+        e.preventDefault();
+
+        const user_id = $("#user_id").val().trim();
+        const password = $("#password").val().trim();
+        const password2 = $("#password2").val().trim();
+        const email = $("#email").val().trim();
+        const name = $("#name").val().trim();
+
+        let valid = true;
+
+        if (!user_id) {
+          $("#userIdMsg").text("아이디를 입력해주세요.").removeClass().addClass("text-sm text-red-500");
+          valid = false;
+        }
+
+        if (!password || !password2 || password !== password2) {
+          $("#pwdCheckMsg").text("비밀번호가 일치하지 않습니다.").removeClass().addClass("text-sm text-red-500");
+          valid = false;
+        }
+
+        if (!email) {
+          $("#emailMsg").text("이메일을 입력해주세요.").removeClass().addClass("text-sm text-red-500");
+          valid = false;
+        }
+
+        if (!name) {
+          $("#nameCheckMsg").text("이름을 입력해주세요.").removeClass().addClass("text-sm text-red-500");
+          valid = false;
+        }
+
+        if (!emailVerified) {
+          $("#emailCodeMsg").text("이메일 인증을 완료해야 합니다.").removeClass().addClass("text-sm text-red-500");
+          valid = false;
+        }
+
+        if (!valid) return;
+
+        // 회원가입 Ajax
+        $.ajax({
+          url: "/user/insertUserInfo",
+          type: "POST",
+          data: { user_id, password, email, name },
+          success: function (res) {
+            if (res.result === 1) {
+              alert(res.msg);
+              location.href = "/user/login";
+            } else {
+              alert("회원가입 실패");
+            }
+          },
+          error: function () {
+            alert("회원가입 중 오류 발생");
+          }
+        });
+      });
+    });
+    $(document).ready(function () {
+      console.log("CSRF token:", $("meta[name='_csrf']").attr("content"));
+      console.log("CSRF header:", $("meta[name='_csrf_header']").attr("content"));
+    });
+
+
+  </script>
+
+</head>
+<body class="bg-white h-screen">
+<div class="flex h-full">
+  <!-- Left: Form -->
+  <div class="w-1/2 flex items-center justify-center px-10">
+    <form id="registerForm" th:action="@{/user/register}" method="post" class="w-full max-w-md space-y-4">
+      <h2 class="text-2xl font-bold mb-6 text-center">회원가입</h2>
+
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+        <input type="text" id="name" name="name" required
+               class="mt-1 w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400">
+        <span id="nameCheckMsg" class="text-sm"></span>
+      </div>
+
+      <div>
+        <label for="user_id" class="block text-sm font-medium text-gray-700">ID</label>
+        <div class="flex items-center gap-2 mt-1">
+          <input type="text" id="user_id" name="user_id" required
+                 class="flex-1 px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400">
+          <button type="button" id="btnUserId"
+                  class="whitespace-nowrap bg-gray-900 text-white px-3 py-2 rounded-md text-sm">중복확인</button>
+        </div>
+        <span id="userIdMsg" class="text-sm"></span>
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">PassWord</label>
+        <input type="password" id="password" name="password" required
+               class="mt-1 w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400">
+      </div>
+
+      <div>
+        <label for="password2" class="block text-sm font-medium text-gray-700">PassWord Check</label>
+        <input type="password" id="password2" required
+               class="mt-1 w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400">
+        <span id="pwdCheckMsg" class="text-sm"></span>
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <div class="flex items-center gap-2 mt-1">
+          <input type="email" id="email" name="email" required
+                 class="flex-1 px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400">
+          <button type="button" id="btnSendVerification"
+                  class="whitespace-nowrap bg-gray-900 text-white px-3 py-2 rounded-md text-sm">메일발송</button>
+        </div>
+        <span id="emailMsg" class="text-sm"></span>
+      </div>
+
+      <div>
+        <label for="emailCode" class="block text-sm font-medium text-gray-700">인증코드 입력</label>
+        <div class="flex items-center gap-2 mt-1">
+          <input type="text" id="emailCode"
+                 class="flex-1 px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400">
+          <button type="button" id="btnVerifyCode"
+                  class="whitespace-nowrap bg-gray-900 text-white px-3 py-2 rounded-md text-sm">확인</button>
+        </div>
+        <span id="emailCodeMsg" class="text-sm"></span>
+      </div>
+
+      <div>
+        <button type="submit" id="btnSend"
+                class="w-full bg-indigo-500 text-white py-2 rounded-lg shadow hover:bg-indigo-600">회원가입</button>
+      </div>
+    </form>
   </div>
-  <div>
-    <button id="btnSend" type="button">회원가입</button>
+
+  <!-- Right: Logo -->
+  <div class="w-1/2 bg-indigo-500 flex items-center justify-center">
+    <img src="/images/logo1.png" alt="Savemate Logo" class="w-80 h-auto rounded-lg shadow-lg" />
   </div>
-</form>
+</div>
+
+<!-- 기존 JS 유지 -->
+
 </body>
 </html>

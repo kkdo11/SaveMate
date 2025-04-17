@@ -1,93 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>로그인 화면</title>
-    <link rel="stylesheet" href="/css/table.css"/>
-    <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>로그인</title>
+    <script src="/js/jquery-3.6.0.min.js"></script>
+    <script>
 
-        // HTML로딩이 완료되고, 실행됨
+
         $(document).ready(function () {
+            const urlParams = new URLSearchParams(window.location.search);
 
-            // 회원가입
-            $("#btnUserReg").on("click", function () { // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
+            if (urlParams.get("passwordChanged") === "true") {
+                $("#successMsg").text("✅ 비밀번호가 성공적으로 변경되었습니다. 다시 로그인 해주세요.").removeClass("hidden");
+            }
+
+            if (urlParams.get("error") === "true") {
+                $("#errorMsg").text("❌ 아이디 또는 비밀번호가 올바르지 않습니다.").removeClass("hidden");
+            }
+
+            $("#btnUserReg").on("click", function () {
                 location.href = "/user/userRegForm";
-            })
+            });
 
-            // 메인화면
-            $("#btnMain").on("click", function () { // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
-                location.href = "../../static/html/index.html";
-            })
+            $("#btnFindId").on("click", function () {
+                location.href = "/user/findID";
+            });
 
-            // 로그인
-            $("#btnLogin").on("click", function () { // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
-                let f = document.getElementById("f"); // form 태그
+            $("#btnFindPwd").on("click", function () {
+                location.href = "/user/findPWD";
+            });
 
-                if (f.user_id.value === "") {
-                    alert("아이디를 입력하세요.");
-                    f.user_id.focus();
-                    return;
-                }
-
-                if (f.password.value === "") {
-                    alert("비밀번호를 입력하세요.");
-                    f.password.focus();
-                    return;
-                }
-
-                // Ajax 호출해서 로그인하기
-                $.ajax({
-                        url: "/user/loginProc",
-                        type: "post", // 전송방식은 Post
-                        dataType: "JSON", // 전송 결과는 JSON으로 받기
-                        data: $("#f").serialize(), // form 태그 내 input 등 객체를 자동으로 전송할 형태로 변경하기
-                        success: function (json) { // /notice/noticeUpdate 호출이 성공했다면..
-
-                            if (json.result === 1) { // 로그인 성공
-                                alert(json.msg); // 메시지 띄우기
-                                location.href = "/loginSuccess"; // 로그인 성공 페이지 이동
-
-                            } else { // 로그인 실패
-                                alert(json.msg); // 메시지 띄우기
-                                $("#user_id").focus(); // 아이디 입력 항목에 마우스 커서 이동
-                            }
-
-                        }
-                    }
-                )
-            })
-        })
+            $("#btnMain").on("click", function () {
+                location.href = "/";
+            });
+        });
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<h2>로그인하기</h2>
-<hr/>
-<br/>
-<form id="f">
-    <div class="divTable minimalistBlack">
-        <div class="divTableBody">
-            <div class="divTableRow">
-                <div class="divTableCell">아이디
-                </div>
-                <div class="divTableCell">
-                    <input type="text" name="userId" id="userId" style="width:95%"/>
-                </div>
+<body class="bg-white">
+<div class="flex min-h-screen">
+    <!-- 로그인 폼 영역 -->
+    <div class="w-1/2 flex flex-col justify-center items-center p-12">
+        <div id="successMsg" class="text-green-500 text-sm mt-2 hidden"></div>
+        <h2 class="text-3xl font-bold mb-8">로그인</h2>
+
+        <form action="/user/loginProc" method="post" class="w-full max-w-sm space-y-4">
+            <!-- ✅ CSRF 토큰 추가 -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div>
+                <label for="user_id" class="block mb-1 text-sm font-medium">ID</label>
+                <input type="text" name="user_id" id="user_id" class="w-full border border-gray-300 rounded-md p-2" required />
             </div>
-            <div class="divTableRow">
-                <div class="divTableCell">비밀번호
-                </div>
-                <div class="divTableCell">
-                    <input type="password" name="password" id="password" style="width:95%"/>
-                </div>
+            <div>
+                <label for="password" class="block mb-1 text-sm font-medium">PassWord</label>
+                <input type="password" name="password" id="password" class="w-full border border-gray-300 rounded-md p-2" required />
             </div>
-        </div>
+            <button type="submit" class="w-full bg-indigo-500 text-white p-2 rounded-md hover:bg-indigo-600 transition">로그인</button>
+
+            <div class="flex justify-between space-x-2">
+                <button id="btnFindId" type="button" class="border border-gray-300 px-3 py-1 rounded-md text-sm">아이디 찾기</button>
+                <button id="btnFindPwd" type="button" class="border border-gray-300 px-3 py-1 rounded-md text-sm">비밀번호 찾기</button>
+                <button id="btnUserReg" type="button" class="bg-black text-white px-3 py-1 rounded-md text-sm">회원가입</button>
+            </div>
+        </form>
+
+        <div id="errorMsg" class="text-red-500 text-sm mt-4 hidden"></div>
     </div>
-    <div>
-        <button id="btnLogin" type="button">로그인</button>
-        <button id="btnUserReg" type="button">회원가입</button>
-        <button id="btnMain" type="button">메인화면</button>
+
+    <!-- 오른쪽 브랜드 영역 -->
+    <div class="w-1/2 bg-indigo-500 flex items-center justify-center">
+        <img src="/images/logo1.png" alt="Savemate Logo" class="w-80 h-auto rounded-lg shadow-lg" />
     </div>
-</form>
+</div>
 </body>
 </html>

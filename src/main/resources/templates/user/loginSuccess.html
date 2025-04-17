@@ -5,37 +5,58 @@
     <title>로그인 성공</title>
     <link rel="stylesheet" href="/css/table.css"/>
     <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript">
 
-        // HTML로딩이 완료되고, 실행됨
+    <!-- CSRF 토큰을 meta 태그로 포함 -->
+    <meta name="_csrf" content="${_csrf.token}"/>
+    <meta name="_csrf_header" content="${_csrf.headerName}"/>
+
+    <script type="text/javascript">
+        // HTML 로딩 후 실행
         $(document).ready(function () {
-            // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
+            // 버튼 클릭했을때 발생되는 이벤트 생성
             $("#btnSend").on("click", function () {
                 location.href = "../../static/html/index.html";
             })
 
-            // 버튼 클릭했을때, 발생되는 이벤트 생성함(onclick 이벤트와 동일함)
+            // 로그아웃 처리
             $("#btnLogout").on("click", function () {
-                // Ajax 호출해서 로그인하기
+                // CSRF 토큰을 Ajax 요청에 포함시킴
                 $.ajax({
-                    url: "/user/logout",
-                    type: "post", // 전송방식은 Post
-                    dataType: "JSON", // 전송 결과는 JSON으로 받기
+                    url: "/user/logout", // Spring Security 로그아웃 URL
+                    type: "POST", // POST 방식
+                    dataType: "JSON", // 결과는 JSON으로 받기
+                    beforeSend: function (xhr) {
+                        // CSRF 토큰을 요청 헤더에 추가
+                        xhr.setRequestHeader("${_csrf.headerName}", "${_csrf.token}");
+                    },
                     success: function (json) {
-
                         if (json.result === 1) { // 로그아웃 성공
-                            alert(json.msg); // 메시지 띄우기
-                            location.href = "../../static/html/index.html"; // 메인화면으로 이동
-
+                            alert(json.msg); // 로그아웃 성공 메시지
+                            location.href = "/user/login"; // 로그인 페이지로 이동
                         } else { // 로그인 실패
-                            alert(json.msg); // 메시지 띄우기
+                            alert(json.msg);
                         }
+                    },
+                    error: function () {
+                        alert("로그아웃 요청에 실패했습니다.");
                     }
-                })
-            })
-        })
+                });
+            });
+
+            // 마이페이지 이동
+            $("#btnMyPage").on("click", function () {
+                location.href = "/user/myPage";
+            });
+
+            // 소비 내역 페이지 이동
+            $("#btnSpending").on("click", function () {
+                location.href = "/spending/page";
+            });
+        });
     </script>
 </head>
+
+
 <body>
 <div class="divTable minimalistBlack">
     <div class="divTableBody">
@@ -49,6 +70,8 @@
 <div></div>
 <br/><br/>
 <button id="btnSend" type="button">메인 화면 이동</button>
+<button id="btnMyPage" type="button">마이페이지 이동</button>
 <button id="btnLogout" type="button">로그아웃</button>
+<button id="btnSpending" type="button">소비내역</button>
 </body>
 </html>

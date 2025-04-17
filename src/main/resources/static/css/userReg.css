@@ -1,0 +1,101 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f5;
+}
+
+.standard-sign-in {
+    display: flex;
+    width: 800px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+form {
+    flex: 1;
+    padding: 40px;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.textbox {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    outline: none;
+}
+
+button {
+    padding: 10px;
+    margin-top: 5px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+#btnUserId, #btnSendVerification, #btnVerifyCode ,#emailExists{
+    background-color: #333;
+    color: white;
+}
+
+#btnSend {
+    width: 100%;
+    background: linear-gradient(45deg, #4b6cb7, #182848);
+    color: white;
+    font-size: 16px;
+}
+
+#btnSend:hover {
+    background: linear-gradient(45deg, #3a5db7, #0f1e48);
+}
+
+#btnUserId:hover, #btnSendVerification:hover, #btnVerifyCode:hover {
+    background-color: #555;
+}
+
+/* 오른쪽 로고 섹션 */
+.logo-section {
+    width: 40%;
+    background: #4b6cb7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.logo-section img {
+    width: 70%;
+    max-width: 200px;
+    border-radius: 10px;
+}
