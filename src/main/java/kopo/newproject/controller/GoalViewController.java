@@ -1,7 +1,8 @@
 package kopo.newproject.controller;
 
-import kopo.newproject.repository.entity.mongo.SpendingEntity;
-import kopo.newproject.service.ISpendingService;
+import kopo.newproject.dto.GoalDTO;
+
+import kopo.newproject.service.impl.GoalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,31 +15,29 @@ import java.util.List;
 
 @Slf4j
 @Controller
-@RequestMapping("/spending")
+@RequestMapping("/goal")
 @RequiredArgsConstructor
-public class SpendingViewController {
+public class GoalViewController {
 
-    private final ISpendingService spendingService;
+    private final GoalService goalService;
 
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
+    // 목표 페이지 요청
     @GetMapping("/page")
-    public String spendingPage(Model model) {
-        log.info("[View] 지출 페이지 요청됨");
+    public String goalPage(Model model) {
+        log.info("[View] 목표 페이지 요청됨");
 
         String userId = getCurrentUserId();
         boolean isAuthenticated = !"anonymousUser".equals(userId);
+        List<GoalDTO> goals = isAuthenticated ? goalService.getGoalsByUser(userId) : List.of();
 
-        List<SpendingEntity> spendings = isAuthenticated
-                ? spendingService.getSpendings(userId, null, null)
-                : List.of();
-
-        model.addAttribute("spendings", spendings);
+        model.addAttribute("goals", goals);
         model.addAttribute("isAuthenticated", isAuthenticated);
         model.addAttribute("username", isAuthenticated ? userId : "게스트");
 
-        return "/spending/spendPage";
+        return "/goal/goalPage";
     }
 }

@@ -15,7 +15,8 @@ import java.io.IOException;
 public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+                                        AuthenticationException exception) throws IOException, ServletException {
         // 로그인 실패 시 에러 메시지를 추가
         request.setAttribute("error", "아이디 또는 비밀번호가 잘못되었습니다.");
         super.onAuthenticationFailure(request, response, exception);

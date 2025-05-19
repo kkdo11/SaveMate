@@ -11,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -46,7 +47,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 로그인 관련 URL에 대해 접근을 허용
                         .requestMatchers("/user/insertUserInfo", "/user/findUserId", "/user/resetPassword",
-                                "/user/findID", "/user/findPWD", "/user/getUserIdExists",
+                                "/user/findID", "/user/findPWD","user/findPwd", "/user/getUserIdExists",
                                 "/user/sendVerificationEmail",
                                 "/user/getEmailExists",
                                 "/user/verifyEmailCode",
@@ -54,10 +55,10 @@ public class SecurityConfig {
                                 "/user/login", "/user/loginsuccess","/spending/**").permitAll()
 
                         // 특정 경로인 /spending/page는 인증 없이 접근 허용
-                        .requestMatchers("/spending/page").permitAll() // 인증 없이 접근 가능
+                        .requestMatchers("/spending/page","/budget/page","/goal/page","/ai/page").permitAll() // 인증 없이 접근 가능
 
                         // 지출 내역 관련 URL은 인증된 사용자만 접근 가능
-                        .requestMatchers( "/spendingAPI/**").authenticated() // /spendingAPI 경로 아래 모든 요청은 인증 필요
+                        .requestMatchers( "/spendingAPI/**","/budgetAPI/**","/dashboardAPI/**","/goalAPI/**","/api/analysis/**").authenticated() // /spendingAPI 경로 아래 모든 요청은 인증 필요
 
                         // 마이페이지와 패스워드 변경은 인증된 사용자만 접근
                         .requestMatchers("/user/mypage", "/user/changePassword").authenticated()
@@ -70,14 +71,14 @@ public class SecurityConfig {
                         .loginProcessingUrl("/user/loginProc")
                         .usernameParameter("user_id")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/user/loginsuccess", true)
+                        .defaultSuccessUrl("/dashboard/page", true)
                         .failureHandler(customAuthenticationFailureHandler)
                         .failureUrl("/user/login?error=true")
                         .permitAll() // 로그인 페이지는 누구나 접근 가능
                 )
                 .logout(logout -> logout
                         .logoutUrl("/user/logout")
-                        .logoutSuccessUrl("/user/login")
+//                        .logoutSuccessUrl("/user/login")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 )
@@ -100,5 +101,14 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
+    }
+
+    @Configuration
+    public static class PasswordEncoderConfig {
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
     }
 }

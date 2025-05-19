@@ -8,8 +8,11 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service("SpendingService")
@@ -101,4 +104,40 @@ public class SpendingService implements ISpendingService {
         }
         return false;
     }
+
+    //카테고리별 월간 사용액 합산
+    public BigDecimal calculateMonthlySpendingSum(String userId, int year, int month, String category) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        return spendingRepository.sumAmountByUserIdAndMonthAndCategory(userId, yearMonth, category);
+    }
+
+    @Override
+    public Map<String, Integer> getTotalAmountGroupedByCategory(String userId) {
+        List<SpendingEntity> spendings = spendingRepository.findByUserId(userId);
+
+        Map<String, Integer> result = new HashMap<>();
+        for (SpendingEntity s : spendings) {
+            String category = s.getCategory();
+            int amount = s.getAmount().intValue(); // ✅ BigDecimal → int 변환
+            result.put(category, result.getOrDefault(category, 0) + amount);
+        }
+        return result;
+    }
+
+
+    @Override
+    public Map<String, Integer> getTotalSpendingByMonth(String userId) {
+        List<SpendingEntity> spendings = spendingRepository.findByUserId(userId);
+
+        Map<String, Integer> result = new HashMap<>();
+        for (SpendingEntity s : spendings) {
+            String monthKey = s.getMonth().toString(); // ex) "2025-03"
+            int amount = s.getAmount().intValue(); // ✅ BigDecimal → int 변환
+            result.put(monthKey, result.getOrDefault(monthKey, 0) + amount);
+        }
+        return result;
+    }
+
+
+
 }

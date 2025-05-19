@@ -5,6 +5,7 @@ import kopo.newproject.repository.entity.mongo.SpendingEntity;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 public interface ISpendingService {
 
@@ -18,4 +19,8 @@ public interface ISpendingService {
     boolean updateSpending(String userId, String id, SpendingRequest request);
 
     boolean deleteSpending(String userId, String id);
+
+    Map<String, Integer> getTotalAmountGroupedByCategory(String userId);
+    Map<String, Integer> getTotalSpendingByMonth(String userId);
+
 }

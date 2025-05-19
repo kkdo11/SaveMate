@@ -7,7 +7,6 @@ import kopo.newproject.dto.MailDTO;
 import kopo.newproject.dto.MsgDTO;
 import kopo.newproject.dto.PasswordChangeRequest;
 import kopo.newproject.dto.UserInfoDTO;
-import kopo.newproject.repository.entity.jpa.UserInfoEntity;
 import kopo.newproject.service.IMailService;
 import kopo.newproject.service.IUserInfoService;
 import kopo.newproject.util.CmmUtil;
@@ -16,16 +15,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -190,7 +186,9 @@ public class UserInfoController {
             UserInfoDTO rDTO = userInfoService.getEmailExists(
                     UserInfoDTO.builder().email(email).build());
             log.info("조회 결과: {}", rDTO != null ? "이메일 존재함" : "이메일 없음");
+
             return Optional.ofNullable(rDTO).orElse(UserInfoDTO.builder().build());
+
         } catch (Exception e) {
             log.error("이메일 중복 확인 중 예외 발생: {}", e.getMessage(), e);
             return UserInfoDTO.builder().build();
@@ -296,15 +294,43 @@ public class UserInfoController {
         }
     }
 
+    @ResponseBody
+    @PostMapping("/findPwd")
+    public MsgDTO findPWD(HttpServletRequest request) {
+        log.info("[findPwd] 요청 시작");
+
+
+        try {
+            String id = CmmUtil.nvl(request.getParameter("user_id"));
+            String email = CmmUtil.nvl(request.getParameter("email"));
+            log.info("입력 user_id: {}, email: {}", id, email);
+
+            UserInfoDTO rDTO = userInfoService.findPWDByIdAndEmail(
+                    UserInfoDTO.builder().user_id(id).email(email).build());
+
+            if (rDTO != null && rDTO.user_id() != null) {
+                log.info("findPwd 성공 - user_id: {}", rDTO.user_id());
+                return MsgDTO.builder().result(1).msg("회원님의 아이디는 [" + rDTO.user_id() + "]입니다.").build();
+            } else {
+                log.warn("findPwd 실패 - 일치하는 정보 없음");
+                return MsgDTO.builder().result(0).msg("일치하는 정보 없습니다.").build();
+            }
+
+        } catch (Exception e) {
+            log.error("아이디 찾기 중 예외 발생: {}", e.getMessage(), e);
+            return MsgDTO.builder().result(0).msg("서버 오류 발생. 관리자에게 문의하세요.").build();
+        }
+    }
+
 
     //임시 비밀번호 발송 및 비밀번호 업데이트
     @ResponseBody
     @PostMapping("/resetPassword")
-    public ResponseEntity<MsgDTO> resetPassword(@RequestParam String name,
+    public ResponseEntity<MsgDTO> resetPassword(@RequestParam String user_id,
                                                 @RequestParam String email) throws Exception {
-        log.info("[resetPassword] 비밀번호 재설정 요청 - name: {}, email: {}", name, email);
+        log.info("[resetPassword] 비밀번호 재설정 요청 - user_id: {}, email: {}", user_id, email);
 
-        MsgDTO dto = userInfoService.resetUserPassword(name, email);
+        MsgDTO dto = userInfoService.resetUserPassword(user_id, email);
 
         if (dto.result() == 1) {
             log.info("비밀번호 재설정 성공");
@@ -314,6 +340,7 @@ public class UserInfoController {
             return ResponseEntity.badRequest().body(dto);
         }
     }
+
 
     @GetMapping("/myPage")
     public String myPage(Model model, @AuthenticationPrincipal UserDetails userDetails) throws Exception{
@@ -373,7 +400,6 @@ public String changePassword(@RequestParam String currentPassword,
     if (result) {
         log.info("비밀번호 변경됨");
         // ✅ 세션 종료 및 로그아웃
-        request.getSession().invalidate();
         new SecurityContextLogoutHandler().logout(request, response, null);
 
         // ✅ login.html에서 메시지를 감지할 수 있도록 URL 파라미터 추가

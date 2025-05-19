@@ -18,6 +18,8 @@ public interface IUserInfoService {
     //아이디 찾기
     UserInfoDTO findUserIdByNameAndEmail(UserInfoDTO pDTO) throws Exception;
 
+    UserInfoDTO findPWDByIdAndEmail(UserInfoDTO pDTO) throws Exception;
+
     //비밀번호 찾기
     MsgDTO resetUserPassword(String name, String email) throws Exception;
 
@@ -31,7 +33,7 @@ public interface IUserInfoService {
     //로그인을 위해 아이디와 비빌먼호가 일치하는지 확인
     int getUserLogin(UserInfoDTO pDTO) throws Exception;
 
-    UserInfoEntity getUserInfo(String user_id);
+
 
     boolean changePassword(String user_id, PasswordChangeRequest request);
 

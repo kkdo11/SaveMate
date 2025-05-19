@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -28,7 +29,7 @@ public class SpendingRequest {
     private String category;
 
     @Min(value = 1, message = "금액은 1원 이상이어야 합니다.")  // 금액은 1원 이상
-    private int amount;
+    private BigDecimal amount;
 
     @NotBlank(message = "설명은 필수 항목입니다.")  // 설명은 필수
     private String description;

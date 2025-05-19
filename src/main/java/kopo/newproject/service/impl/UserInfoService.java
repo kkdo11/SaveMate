@@ -31,6 +31,8 @@ public class UserInfoService implements IUserInfoService {
     
     //회원관련 repository
     private final UserInfoRepository userInfoRepository;
+
+
     private final MailService mailService;
 
     @Autowired
@@ -193,16 +195,39 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
     }
 
 
-
-
-
-
+    //비밀번호 찾기
     @Override
-    public MsgDTO resetUserPassword(String name, String email) throws Exception {
-        log.info("비밀번호 재발급 요청: name={}, email={}", name, email);
+    public UserInfoDTO findPWDByIdAndEmail(UserInfoDTO pDTO) throws Exception {
+        log.info("{}.findPWDByIdAndEmail start", this.getClass().getName());
+
+        String id = CmmUtil.nvl(pDTO.user_id());
+        String email = CmmUtil.nvl(pDTO.email());
+
+        // 아이디와 이메일이 일치하는 사용자 조회
+        Optional<UserInfoEntity> rDTO = userInfoRepository.findByUserIdAndEmail(id, email);
+
+        if (rDTO.isPresent()) {
+            log.info("아이디 조회 성공 : {}", rDTO.get().getUserId());
+            return UserInfoDTO.builder()
+                    .user_id(rDTO.get().getUserId())  // user_id를 결과로 리턴
+                    .build();
+        }
+
+        log.info("일치하는 사용자가 존재하지 않음.");
+        return null;
+    }
+
+
+
+
+
+    //임시 비밀번호 발급
+    @Override
+    public MsgDTO resetUserPassword(String user_id, String email) throws Exception {
+        log.info("비밀번호 재발급 요청: user_id={}, email={}", user_id, email);
 
         // 사용자 정보 조회
-        Optional<UserInfoEntity> userOpt = userInfoRepository.findByNameAndEmail(name, email);
+        Optional<UserInfoEntity> userOpt = userInfoRepository.findByUserIdAndEmail(user_id, email);
 
         if (userOpt.isEmpty()) {
             return MsgDTO.builder()
@@ -244,11 +269,8 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
         }
     }
 
-    public UserInfoEntity getUserInfo(String user_id) {
-        return userInfoRepository.findByUserId(user_id)
-                .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다."));
-    }
 
+    //비밀번호 변경
     @Override
     public boolean changePassword(String user_id, PasswordChangeRequest request) {
         Optional<UserInfoEntity> optionalUser = userInfoRepository.findByUserId(user_id);

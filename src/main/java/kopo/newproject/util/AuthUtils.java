@@ -11,6 +11,7 @@ public class AuthUtils {
         if (auth != null && auth.getPrincipal() instanceof UserDetails) {
             return ((UserDetails) auth.getPrincipal()).getUsername(); // user_id로 사용
         }
+
         return null;
     }
 }

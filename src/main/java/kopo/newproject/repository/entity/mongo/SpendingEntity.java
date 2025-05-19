@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
@@ -36,7 +37,7 @@ public class SpendingEntity {
     private String category;
 
     @Setter
-    private int amount;
+    private BigDecimal amount;
 
     @Setter
     private String description;
@@ -45,16 +46,5 @@ public class SpendingEntity {
     private YearMonth month;  // 월을 YearMonth로 저장
 
 
-//    // 생성자 또는 빌더에서 직접 month 세팅
-//    public SpendingRequest fromEntity(SpendingEntity entity) {
-//        return SpendingRequest.builder()
-//                .name(entity.getName())
-//                .date(entity.getDate())
-//                .category(entity.getCategory())
-//                .amount(entity.getAmount())
-//                .description(entity.getDescription())
-//                .createdAt(entity.getId().getDate()
-//                        .toInstant().atZone(ZoneId.of("Asia/Seoul")).toLocalDateTime())
-//                .build();
-//    }
+
 }
