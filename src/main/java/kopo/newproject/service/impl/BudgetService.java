@@ -129,6 +129,18 @@ public class BudgetService implements IBudgetService {
     }
 
 
+    // 특정 연/월 모든 예산(카테고리별) 조회
+    public List<BudgetEntity> getBudgetsByUserIdAndYearMonth(String userId, int year, int month) {
+        List<BudgetEntity> budgets = budgetRepository.findAllByUserIdAndYearAndMonth(userId, year, month);
+        for (BudgetEntity b : budgets) {
+            BigDecimal used = spendingService.calculateMonthlySpendingSum(userId, year, month, b.getCategory());
+            b.setUsedBudget(used);
+        }
+        return budgets;
+    }
+
+
+
 
     @Override
     public List<BudgetEntity> findAll() {

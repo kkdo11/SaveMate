@@ -165,4 +165,24 @@ public class BudgetAPIController {
         }
     }
 
+    // 월별 전체 예산(카테고리별) 조회
+    @GetMapping("/monthly")
+    public ResponseEntity<List<BudgetEntity>> getBudgetsByMonth(
+            @RequestParam("month") String monthStr
+    ) {
+        try {
+            String userId = getCurrentUserId();
+            // monthStr: "YYYY-MM" 형식
+            String[] parts = monthStr.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]);
+            log.info("월별 예산 조회 요청: userId={}, year={}, month={}", userId, year, month);
+            List<BudgetEntity> budgets = budgetService.getBudgetsByUserIdAndYearMonth(userId, year, month);
+            return ResponseEntity.ok(budgets);
+        } catch (Exception e) {
+            log.error("월별 예산 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

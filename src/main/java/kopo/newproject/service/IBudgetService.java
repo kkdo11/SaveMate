@@ -16,6 +16,7 @@ public interface IBudgetService {
     List<BudgetEntity> findAll();
     List<BudgetEntity> findByMonthAndCategory(Integer month, String category);
     List<BudgetEntity> getBudgetsByUserId(String userId);
+    List<BudgetEntity> getBudgetsByUserIdAndYearMonth(String userId, int year, int month);
 
     Map<String, Integer> getTotalBudgetByMonth(String userId);
 
