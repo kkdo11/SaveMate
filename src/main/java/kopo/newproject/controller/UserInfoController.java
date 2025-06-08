@@ -50,12 +50,6 @@ public class UserInfoController {
         return "user/login";
     }
 
-    @GetMapping("/loginsuccess")
-    public String loginSuccess(HttpSession session, Authentication authentication) {
-        log.info("[loginSuccess] 로그인 성공: 사용자 ID = {}", authentication.getName());
-        session.setAttribute("SS_USER_ID", authentication.getName());
-        return "user/loginSuccess";
-    }
 
     @GetMapping("/findID")
     public String findIDPage() {
