@@ -22,7 +22,7 @@ function showNotification(type, title, message, action = null) {
     const notificationAction = document.getElementById('notificationAction');
 
     // 타입별 스타일 설정
-    let iconHtml;
+    let iconHtml = '';
     switch(type) {
         case 'error':
             notification.className = 'rounded-md p-4 bg-red-50';
@@ -93,7 +93,7 @@ function showToast(type, title, message, duration = 3000) {
     const toastMessage = document.getElementById('toastMessage');
 
     // 타입별 스타일 설정
-    let iconHtml;
+    let iconHtml = '';
     switch(type) {
         case 'success':
             toast.firstElementChild.className = 'bg-white rounded-lg shadow-lg border-l-4 border-green-500 p-4 flex items-start max-w-xs';
@@ -113,9 +113,6 @@ function showToast(type, title, message, duration = 3000) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>`;
             break;
-        default:
-            toast.firstElementChild.className = 'bg-white rounded-lg shadow-lg border-l-4 border-gray-500 p-4 flex items-start max-w-xs';
-            iconHtml = '';
     }
 
     toastIcon.innerHTML = iconHtml;
@@ -209,16 +206,12 @@ function requestAnalysis(event) {
             showToast('success', '분석 완료', '소비 분석이 완료되었습니다.');
         })
         .catch(err => {
-            if (err.message.includes("하루에 최대 3번만 분석할 수 있습니다")) {
-                showToast('error', '분석 제한', '하루에 최대 3번만 분석할 수 있습니다.');
-            } else {
-                showNotification(
-                    'error',
-                    '분석 요청 실패',
-                    err.message,
-                    `<button onclick="requestAnalysis(event)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">다시 시도</button>`
-                );
-            }
+            showNotification(
+                'error',
+                '분석 요청 실패',
+                err.message,
+                `<button onclick="requestAnalysis(event)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">다시 시도</button>`
+            );
         })
         .finally(() => toggleLoading(false));
 }
@@ -252,13 +245,29 @@ function deleteAnalysis(event) {
 }
 
 // 분석 결과 렌더링 함수 개선
-function renderAnalysisResult() {
+function renderAnalysisResult(result) {
     const container = document.getElementById("analysisResult");
 
     // 기존 내용 페이드 아웃
     container.classList.add('opacity-0');
 
+    setTimeout(() => {
+        container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${renderCard("🧾 소비 습관 분석", result.habit, "yellow")}
+                    ${renderCard("💡 절약 팁 제시", result.tip, "blue")}
+                    ${renderCard("❗ 이상 지출 탐지", result.anomaly, "red")}
+                    ${renderCard("📌 다음 달 행동 가이드", result.guide, "purple")}
+                </div>
+            `;
 
+        // 새 내용 페이드 인
+        container.classList.remove('opacity-0');
+
+        if (result.categorySpending) {
+            renderSpendingChart(result.categorySpending);
+        }
+    }, 300);
 }
 
 function renderCard(title, content, color) {
@@ -351,40 +360,7 @@ function clearResult() {
         spendingChart = null;
     }
 }
-function showProgressBar() {
-    document.getElementById('progressBarContainer').classList.remove('hidden');
-    document.getElementById('progressBar').style.width = '0%';
-    setTimeout(() => {
-        document.getElementById('progressBar').style.width = '80%';
-    }, 200);
-}
-function completeProgressBar() {
-    document.getElementById('progressBar').style.width = '100%';
-    setTimeout(() => {
-        document.getElementById('progressBarContainer').classList.add('hidden');
-        document.getElementById('progressBar').style.width = '0%';
-    }, 700);
-}
-function fadeInResult() {
-    const result = document.getElementById('analysisResult');
-    result.classList.remove('opacity-0');
-    result.classList.add('opacity-100');
-}
-function fadeOutResult() {
-    const result = document.getElementById('analysisResult');
-    result.classList.remove('opacity-100');
-    result.classList.add('opacity-0');
-}
-// 복사 버튼
-function enableCopyButton() {
-    const btn = document.getElementById('copyResultBtn');
-    btn.classList.remove('hidden');
-    btn.onclick = () => {
-        const text = document.getElementById('analysisResult').innerText;
-        navigator.clipboard.writeText(text);
-        showToast('success', '복사 완료', '분석 결과가 복사되었습니다.');
-    };
-}
+
 // 히스토리 모달 표시
 function showHistory(event) {
     event.preventDefault();
