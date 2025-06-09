@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <meta charset="UTF-8">
-    <title>비밀번호 찾기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>비밀번호 찾기 - SAVEMATE</title>
     <script src="/js/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         $(document).ajaxSend(function (e, xhr, options) {
             const token = $("meta[name='_csrf']").attr("content");
             const header = $("meta[name='_csrf_header']").attr("content");
-            console.log(token )
             xhr.setRequestHeader(header, token);
         });
 
@@ -50,7 +50,7 @@
                             $msg.text("일치하는 사용자 정보를 찾을 수 없습니다.")
                                 .removeClass().addClass("text-red-500 text-sm");
                             return;
-                    }
+                        }
 
                         $.ajax({
                             type: "POST",
@@ -81,8 +81,7 @@
     </script>
 </head>
 
-
-<body class="bg-white">
+<body class="bg-gray-50 text-gray-800">
 <!-- ✅ Header -->
 <header class="bg-white shadow border-b border-gray-200">
     <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center flex-wrap">
@@ -115,34 +114,34 @@
     </div>
 </header>
 
-
-<div class="flex min-h-screen">
+<!-- 본문 -->
+<div class="flex flex-col lg:flex-row min-h-screen">
     <!-- 왼쪽 폼 영역 -->
-    <div class="w-1/2 flex flex-col justify-center items-center p-12">
-        <h2 class="text-3xl font-bold mb-8">임시 비밀번호 발급</h2>
-        <form id="findPwdForm" class="w-full max-w-sm space-y-4">
+    <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12 bg-white">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">임시 비밀번호 발급</h2>
+        <form id="findPwdForm" class="w-full max-w-md space-y-5">
             <div>
                 <label for="user_id" class="block mb-1 text-sm font-medium">아이디</label>
                 <input type="text" id="user_id" name="user_id"
-                       class="w-full border border-gray-300 rounded-md p-2" required />
+                       class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-purple-400 focus:outline-none" required />
             </div>
             <div>
                 <label for="email" class="block mb-1 text-sm font-medium">이메일</label>
                 <input type="email" id="email" name="email"
-                       class="w-full border border-gray-300 rounded-md p-2" required />
+                       class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-purple-400 focus:outline-none" required />
             </div>
             <span id="findPwdMsg" class="block text-sm"></span>
-            <button type="submit" class="w-full bg-indigo-500 text-white p-2 rounded-md hover:bg-indigo-600 transition">
+            <button type="submit" class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition">
                 비밀번호 재설정
             </button>
-            <div class="flex justify-between space-x-2">
-                <button id="btnFindId" type="button" class="border border-gray-300 px-3 py-1 rounded-md text-sm">
+            <div class="flex justify-between space-x-2 text-sm">
+                <button id="btnFindId" type="button" class="border border-gray-300 px-3 py-1 rounded hover:bg-gray-100">
                     아이디 찾기
                 </button>
-                <button id="btnLogin" type="button" class="border border-gray-300 px-3 py-1 rounded-md text-sm">
+                <button id="btnLogin" type="button" class="border border-gray-300 px-3 py-1 rounded hover:bg-gray-100">
                     로그인
                 </button>
-                <button id="btnUserReg" type="button" class="bg-black text-white px-3 py-1 rounded-md text-sm">
+                <button id="btnUserReg" type="button" class="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-900">
                     회원가입
                 </button>
             </div>
@@ -150,8 +149,8 @@
     </div>
 
     <!-- 오른쪽 브랜드 영역 -->
-    <div class="w-1/2 bg-indigo-500 flex items-center justify-center">
-        <img src="/images/logo1.png" alt="Savemate Logo" class="w-80 h-auto rounded-lg shadow-lg" />
+    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-purple-500 to-indigo-600 items-center justify-center">
+        <img src="/images/logo1.png" alt="Savemate Logo" class="w-72 h-auto rounded-lg shadow-2xl" />
     </div>
 </div>
 </body>
