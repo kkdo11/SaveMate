@@ -152,9 +152,14 @@
         </div>
     </div>
 
+    <!-- 분석 진행 Progress Bar -->
+    <div id="progressBarContainer" class="w-full h-2 bg-indigo-100 rounded mt-4 mb-2 hidden">
+        <div id="progressBar" class="h-2 bg-indigo-500 rounded transition-all duration-500" style="width:0%"></div>
+    </div>
     <!-- 🧾 결과 영역 -->
-    <div id="analysisResult" class="whitespace-pre-wrap text-gray-800 min-h-[200px] bg-gray-50 space-y-6 fade-transition">
+    <div id="analysisResult" class="whitespace-pre-wrap text-gray-800 min-h-[200px] bg-gray-50 space-y-6 fade-transition opacity-0 transition-opacity duration-700">
         <!-- 분석 결과가 여기에 동적으로 추가됨 -->
+        <button id="copyResultBtn" class="hidden mt-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-xs float-right">결과 복사</button>
     </div>
 
 
@@ -173,6 +178,7 @@
 
 <!-- ✅ JS 통합 모듈 -->
 <script src="/js/analysis.js"></script>
+
 
 </body>
 </html>
