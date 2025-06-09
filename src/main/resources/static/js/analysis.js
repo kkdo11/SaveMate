@@ -246,7 +246,6 @@ function deleteAnalysis(event) {
         });
 }
 
-// 분석 결과 렌더링 함수 개선
 function renderAnalysisResult(result) {
     const container = document.getElementById("analysisResult");
 
@@ -255,15 +254,15 @@ function renderAnalysisResult(result) {
 
     setTimeout(() => {
         container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    ${renderCard("🧾 소비 습관 분석", result.habit, "yellow")}
-                    ${renderCard("💡 절약 팁 제시", result.tip, "blue")}
-                    ${renderCard("❗ 이상 지출 탐지", result.anomaly, "red")}
-                    ${renderCard("📌 다음 달 행동 가이드", result.guide, "purple")}
-                </div>
-            `;
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${renderCard("✅ 월간 요약", result.summary, "green")}
+                ${renderCard("🧾 소비 습관 분석", result.habit, "yellow")}
+                ${renderCard("💡 절약 팁 제시", result.tip, "blue")}
+                ${renderCard("❗ 이상 지출 탐지", result.anomaly, "red")}
+                ${renderCard("📌 다음 달 행동 가이드", result.guide, "purple")}
+            </div>
+        `;
 
-        // 새 내용 페이드 인
         container.classList.remove('opacity-0');
 
         if (result.categorySpending) {
@@ -271,6 +270,7 @@ function renderAnalysisResult(result) {
         }
     }, 300);
 }
+
 
 function renderCard(title, content, color) {
     return `
