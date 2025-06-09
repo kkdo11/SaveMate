@@ -19,4 +19,16 @@ public interface IAIAnalysisService {
 
     // 월별 분석 삭제
     void deleteAnalysisByMonth(String userId, String yearMonth);
+
+    // 최신 분석 결과 조회
+    Object getLatestAnalysis(String userId);
+
+    // 분석 히스토리 조회
+    List<AIAnalysisEntity> getAnalysisHistory(String userId, String yearMonth);
+
+    // 특정 분석 결과 조회
+    Object getAnalysisById(String userId, String analysisId);
+
+    // 분석 결과 비교
+    Object compareAnalysis(String userId, String analysisId1, String analysisId2);
 }

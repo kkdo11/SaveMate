@@ -23,6 +23,8 @@ public class AIAnalysisEntity {
     private String requestData; // 사용자 id
     private String result; // GPT 응답
 
+     private int version;
+
     @CreatedDate
     private LocalDateTime createdAt;
 }

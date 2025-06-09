@@ -39,6 +39,13 @@ public class AIAnalysisService implements IAIAnalysisService {
         try {
             String requestJson = objectMapper.writeValueAsString(preprocessedData);
 
+            // 버전 계산: 해당 월의 기존 분석 개수 + 1
+            int version = 1;
+            List<AIAnalysisEntity> existing = aiAnalysisRepository.findByUserIdAndMonthOrderByCreatedAtDesc(userId, yearMonth.toString());
+            if (existing != null && !existing.isEmpty()) {
+                version = existing.get(0).getVersion() + 1;
+            }
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(openAiKey);
@@ -83,9 +90,16 @@ public class AIAnalysisService implements IAIAnalysisService {
                     .requestData(requestJson)
                     .result(objectMapper.writeValueAsString(parsed)) // JSON 형태로 저장
                     .createdAt(LocalDateTime.now())
+                    .version(version)
                     .build();
 
             aiAnalysisRepository.save(analysis);
+
+            // 월별 최대 5개 제한: 5개 이상이면 가장 오래된 것 삭제
+            if (existing != null && existing.size() >= 5) {
+                AIAnalysisEntity oldest = existing.get(existing.size() - 1); // 내림차순 정렬이므로 마지막이 가장 오래됨
+                aiAnalysisRepository.deleteById(oldest.getId());
+            }
 
             // 🔁 JSON 문자열 반환
             return objectMapper.writeValueAsString(parsed);
@@ -131,7 +145,6 @@ public class AIAnalysisService implements IAIAnalysisService {
 
 
 
-
     @Override
     public String analyze(String userId, String yearMonthStr) {
         YearMonth yearMonth = YearMonth.parse(yearMonthStr);
@@ -147,5 +160,51 @@ public class AIAnalysisService implements IAIAnalysisService {
     @Override
     public void deleteAnalysisByMonth(String userId, String yearMonth) {
         aiAnalysisRepository.deleteByUserIdAndMonth(userId, yearMonth);
+    }
+
+    @Override
+    public AIAnalysisEntity getLatestAnalysis(String userId) {
+        // 최신 생성일 기준으로 정렬하여 가장 최근 분석 1건 반환
+        return aiAnalysisRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
+    }
+
+    @Override
+    public List<AIAnalysisEntity> getAnalysisHistory(String userId, String yearMonth) {
+        // 해당 월의 모든 분석(버전) 내역을 생성일 내림차순으로 반환
+        return aiAnalysisRepository.findByUserIdAndMonthOrderByCreatedAtDesc(userId, yearMonth);
+    }
+
+    @Override
+    public AIAnalysisEntity getAnalysisById(String userId, String analysisId) {
+        // 사용자 소유의 특정 분석 결과 반환
+        return aiAnalysisRepository.findByIdAndUserId(analysisId, userId).orElse(null);
+    }
+
+    @Override
+    public Map<String, Object> compareAnalysis(String userId, String analysisId1, String analysisId2) {
+        AIAnalysisEntity a1 = getAnalysisById(userId, analysisId1);
+        AIAnalysisEntity a2 = getAnalysisById(userId, analysisId2);
+        if (a1 == null || a2 == null) return Map.of("error", "분석 결과를 찾을 수 없습니다");
+        try {
+            Map<String, String> r1 = objectMapper.readValue(a1.getResult(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
+            Map<String, String> r2 = objectMapper.readValue(a2.getResult(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
+            Map<String, Object> diff = new java.util.HashMap<>();
+            for (String key : r1.keySet()) {
+                String v1 = r1.get(key);
+                String v2 = r2.get(key);
+                if (!java.util.Objects.equals(v1, v2)) {
+                    diff.put(key, Map.of("before", v2, "after", v1));
+                }
+            }
+            return Map.of(
+                "version1", a1.getVersion(),
+                "version2", a2.getVersion(),
+                "createdAt1", a1.getCreatedAt(),
+                "createdAt2", a2.getCreatedAt(),
+                "differences", diff
+            );
+        } catch (Exception e) {
+            return Map.of("error", e.getMessage());
+        }
     }
 }

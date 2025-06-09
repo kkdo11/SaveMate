@@ -8,5 +8,8 @@ public interface AIAnalysisRepository extends MongoRepository<AIAnalysisEntity, 
     List<AIAnalysisEntity> findByUserIdAndMonth(String userId, String month);
 
     void deleteByUserIdAndMonth(String userId, String month);
-}
 
+    java.util.Optional<AIAnalysisEntity> findTopByUserIdOrderByCreatedAtDesc(String userId);
+    List<AIAnalysisEntity> findByUserIdAndMonthOrderByCreatedAtDesc(String userId, String month);
+    java.util.Optional<AIAnalysisEntity> findByIdAndUserId(String id, String userId);
+}

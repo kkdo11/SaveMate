@@ -59,4 +59,62 @@ public class AnalysisAPIController {
             return ResponseEntity.internalServerError().body("❌ 삭제 실패: " + e.getMessage());
         }
     }
+
+    // 최신 분석 결과 조회
+    @GetMapping("/latest")
+    public ResponseEntity<?> getLatestAnalysis() {
+        try {
+            String userId = getCurrentUserId();
+            var latest = aiAnalysisService.getLatestAnalysis(userId);
+            if (latest == null) {
+                return ResponseEntity.status(404).body("분석 결과 없음");
+            }
+            return ResponseEntity.ok(latest);
+        } catch (Exception e) {
+            log.error("❌ 최신 분석 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("❌ 조회 실패: " + e.getMessage());
+        }
+    }
+
+    // 분석 히스토리 조회
+    @GetMapping("/history")
+    public ResponseEntity<?> getAnalysisHistory(@RequestParam String yearMonth) {
+        try {
+            String userId = getCurrentUserId();
+            var history = aiAnalysisService.getAnalysisHistory(userId, yearMonth);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            log.error("❌ 히스토리 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("❌ 히스토리 조회 실패: " + e.getMessage());
+        }
+    }
+
+    // 특정 분석 결과 조회
+    @GetMapping("/id/{analysisId}")
+    public ResponseEntity<?> getAnalysisById(@PathVariable String analysisId) {
+        try {
+            String userId = getCurrentUserId();
+            var analysis = aiAnalysisService.getAnalysisById(userId, analysisId);
+            if (analysis == null) {
+                return ResponseEntity.status(404).body("분석 결과 없음");
+            }
+            return ResponseEntity.ok(analysis);
+        } catch (Exception e) {
+            log.error("❌ 분석 결과 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("❌ 조회 실패: " + e.getMessage());
+        }
+    }
+
+    // 분석 결과 비교
+    @GetMapping("/compare")
+    public ResponseEntity<?> compareAnalysis(@RequestParam String analysisId1, @RequestParam String analysisId2) {
+        try {
+            String userId = getCurrentUserId();
+            var comparison = aiAnalysisService.compareAnalysis(userId, analysisId1, analysisId2);
+            return ResponseEntity.ok(comparison);
+        } catch (Exception e) {
+            log.error("❌ 분석 비교 실패: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("❌ 비교 실패: " + e.getMessage());
+        }
+    }
 }
