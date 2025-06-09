@@ -137,24 +137,26 @@ function fetchLatestAnalysis() {
         headers: { [csrfHeader]: csrfToken }
     })
         .then(res => {
+            const contentType = res.headers.get('content-type');
             if (res.status === 404) {
-                // 데이터 없음 상태
                 showEmptyState(true);
                 return null;
             } else if (res.status === 401 || res.status === 403) {
-                // 인증 문제
                 showNotification(
                     'warning',
                     '로그인이 필요합니다',
-                    '로그인이 필요하거나 세션이 만료되었습니다.',
+                    '로그인 후 이용해 주세요.',
                     `<a href="/user/login" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">로그인하기</a>`
                 );
                 return null;
             } else if (!res.ok) {
-                // 기타 서버 오류
                 throw new Error("서버 오류가 발생했습니다");
             }
-            return res.json();
+            if (contentType && contentType.includes('application/json')) {
+                return res.json();
+            } else {
+                throw new Error("서버에서 올바른 데이터를 받지 못했습니다. (예상치 못한 응답)");
+            }
         })
         .then(json => {
             if (!json) return; // 이미 에러 처리됨

@@ -12,4 +12,5 @@ public interface AIAnalysisRepository extends MongoRepository<AIAnalysisEntity, 
     java.util.Optional<AIAnalysisEntity> findTopByUserIdOrderByCreatedAtDesc(String userId);
     List<AIAnalysisEntity> findByUserIdAndMonthOrderByCreatedAtDesc(String userId, String month);
     java.util.Optional<AIAnalysisEntity> findByIdAndUserId(String id, String userId);
+    long countByUserIdAndMonthAndCreatedAtBetween(String userId, String month, java.util.Date start, java.util.Date end);
 }

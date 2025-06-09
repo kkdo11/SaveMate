@@ -149,6 +149,21 @@ public class AIAnalysisService implements IAIAnalysisService {
     public String analyze(String userId, String yearMonthStr) {
         YearMonth yearMonth = YearMonth.parse(yearMonthStr);
         Map<String, Object> data = preprocessorService.generateAnalysisInput(userId, yearMonth);
+
+        // 하루 3회 제한 로직 추가
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDateTime startOfDay = today.atStartOfDay();
+        java.time.LocalDateTime endOfDay = today.atTime(23, 59, 59);
+        long todayCount = aiAnalysisRepository.countByUserIdAndMonthAndCreatedAtBetween(
+            userId,
+            yearMonth.toString(),
+            java.sql.Timestamp.valueOf(startOfDay),
+            java.sql.Timestamp.valueOf(endOfDay)
+        );
+        if (todayCount >= 3) {
+            throw new IllegalStateException("하루에 최대 3번만 분석할 수 있습니다");
+        }
+
         return analyzeUserSpending(userId, yearMonth, data);
     }
 
