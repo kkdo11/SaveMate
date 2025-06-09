@@ -411,12 +411,16 @@
                 showToast('success', '분석 완료', '소비 분석이 완료되었습니다.');
             })
             .catch(err => {
-                showNotification(
-                    'error',
-                    '분석 요청 실패',
-                    err.message,
-                    `<button onclick="requestAnalysis(event)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">다시 시도</button>`
-                );
+                if (err.message.includes("하루에 최대 3번만 분석할 수 있습니다")) {
+                    showToast('error', '분석 제한', '하루에 최대 3번만 분석할 수 있습니다.');
+                } else {
+                    showNotification(
+                        'error',
+                        '분석 요청 실패',
+                        err.message,
+                        `<button onclick="requestAnalysis(event)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">다시 시도</button>`
+                    );
+                }
             })
             .finally(() => toggleLoading(false));
     }
