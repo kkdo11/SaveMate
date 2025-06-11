@@ -22,6 +22,6 @@ public class BudgetViewController {
         model.addAttribute("isAuthenticated", isAuthenticated);
         model.addAttribute("username", isAuthenticated ? userId : "게스트");
 
-        return "/budget/budgetPage"; // templates/budget/budgetPage.html
+        return "budget/budgetPage"; // templates/budget/budgetPage.html
     }
 }

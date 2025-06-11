@@ -30,6 +30,6 @@ public class AnalysisViewController {
 
         log.info("🧠 [View] AI 분석 페이지 요청됨 - 사용자: {}, 로그인 상태: {}", username, isAuthenticated);
 
-        return "/ai/analysisPage"; // => templates/ai/analysisPage.html
+        return "ai/analysisPage"; // => templates/ai/analysisPage.html
     }
 }

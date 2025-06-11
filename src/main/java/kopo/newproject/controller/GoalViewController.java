@@ -38,6 +38,6 @@ public class GoalViewController {
         model.addAttribute("isAuthenticated", isAuthenticated);
         model.addAttribute("username", isAuthenticated ? userId : "게스트");
 
-        return "/goal/goalPage";
+        return "goal/goalPage";
     }
 }

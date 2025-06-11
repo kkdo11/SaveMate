@@ -39,6 +39,6 @@ public class SpendingViewController {
         model.addAttribute("isAuthenticated", isAuthenticated);
         model.addAttribute("username", isAuthenticated ? userId : "게스트");
 
-        return "/spending/spendPage";
+        return "spending/spendPage";
     }
 }
