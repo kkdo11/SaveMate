@@ -64,8 +64,11 @@ document.getElementById('goal-form').addEventListener('submit', function(e) {
 
     // 빈칸 또는 잘못된 값 검사
     if (!goalName || !targetAmount || !savedAmount || !deadline) {
-        alert("⚠️ 모든 필드를 입력해주세요.");
+        alert("⚠️ 모든 필드를 정확히 입력해주세요.");
         return;
+    }
+    if (targetAmount <= 0 || savedAmount <= 0){
+        alert("⚠️ 목표 금액과 현재 금액은 0보다 커야 합니다.");
     }
 
     if (isNaN(targetAmount) || isNaN(savedAmount)) {

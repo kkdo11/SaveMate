@@ -117,7 +117,7 @@ document.getElementById('spendingForm').addEventListener('submit', async functio
     const description = document.getElementById('description').value.trim();
     const date = document.getElementById('date').value.trim();
 
-    if (!name || !category || !date || !amount || amount <= 0) {
+    if (!name || !category || !date || !amount ||!description || amount <= 0) {
         alert("⚠️ 모든 항목을 정확히 입력해주세요.");
         return;
     }
