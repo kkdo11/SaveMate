@@ -15,7 +15,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 
 @Document(collection = "spending")
-@Getter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -40,10 +40,7 @@ public class SpendingEntity {
     private BigDecimal amount;
 
     @Setter
-    private String description;
-
-    @Setter
-    private YearMonth month;  // 월을 YearMonth로 저장
+    private String description; // 상세 설명
 
     // Manually added getters to resolve compilation issues if Lombok fails
     public String getCategory() {

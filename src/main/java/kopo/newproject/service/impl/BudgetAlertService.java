@@ -9,6 +9,7 @@ import kopo.newproject.repository.jpa.BudgetRepository;
 import kopo.newproject.repository.jpa.BudgetAlertLogRepository;
 import kopo.newproject.repository.mongo.SpendingRepository;
 import kopo.newproject.service.IMailService;
+import kopo.newproject.service.ISpendingService;
 import kopo.newproject.service.IUserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,6 +35,7 @@ public class BudgetAlertService {
     private final BudgetAlertLogRepository budgetAlertLogRepository;
     private final IMailService mailService;
     private final IUserInfoService userInfoService; // 사용자 정보 서비스 추가
+    private final ISpendingService spendingService; // 지출 서비스 추가
 
     // 매일 새벽 4시에 실행
     @Scheduled(cron = "0 15 00  * * ?")
@@ -81,10 +83,13 @@ public class BudgetAlertService {
             }
 
             // 현재까지의 지출액 계산
-            String monthString = currentYearMonth.toString();
-            log.info(" -> SpendingRepository 호출 파라미터: userId={}, category={}, month={}", userId, category, monthString);
-            SpendingTotalDTO spendingTotal = spendingRepository.sumAmountByUserIdAndCategoryAndMonth(userId, category, monthString);
-            BigDecimal currentSpending = (spendingTotal != null && spendingTotal.total() != null) ? spendingTotal.total() : BigDecimal.ZERO;
+            BigDecimal currentSpending;
+            try {
+                currentSpending = spendingService.calculateMonthlySpendingSum(userId, year, month, category);
+            } catch (Exception e) {
+                log.error("사용자 {}의 {} 카테고리 지출 합계 계산 중 오류 발생. 건너뜁니다.", userId, category, e);
+                continue;
+            }
 
             // 디버깅 로그 추가
             log.info("\n[예산 검사] 사용자: {}, 카테고리: {}, 총 예산: {}\n" +

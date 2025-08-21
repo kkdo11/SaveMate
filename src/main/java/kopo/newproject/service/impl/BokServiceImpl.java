@@ -1,7 +1,7 @@
 
 package kopo.newproject.service.impl;
 
-import kopo.newproject.client.BokApiClient;
+import kopo.newproject.feignClient.BokApiClient;
 import kopo.newproject.dto.BokApiResponse;
 import kopo.newproject.dto.StatisticRow;
 import kopo.newproject.service.IBokService;

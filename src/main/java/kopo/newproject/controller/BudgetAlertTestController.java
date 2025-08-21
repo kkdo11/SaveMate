@@ -134,22 +134,22 @@ public class BudgetAlertTestController {
             YearMonth currentMonth = YearMonth.now();
 
             // user1 (M, 20대) 지출
-            spendings.add(SpendingEntity.builder().userId("user1").date(LocalDate.now()).category("식비").amount(new BigDecimal("50000")).description("점심").month(currentMonth).build());
-            spendings.add(SpendingEntity.builder().userId("user1").date(LocalDate.now()).category("교통/차량").amount(new BigDecimal("20000")).description("주유").month(currentMonth).build());
-            spendings.add(SpendingEntity.builder().userId("user1").date(LocalDate.now()).category("문화생활").amount(new BigDecimal("30000")).description("영화").month(currentMonth).build());
+            spendings.add(SpendingEntity.builder().userId("user1").date(LocalDate.now()).category("식비").amount(new BigDecimal("50000")).description("점심").build());
+            spendings.add(SpendingEntity.builder().userId("user1").date(LocalDate.now()).category("교통/차량").amount(new BigDecimal("20000")).description("주유").build());
+            spendings.add(SpendingEntity.builder().userId("user1").date(LocalDate.now()).category("문화생활").amount(new BigDecimal("30000")).description("영화").build());
 
             // user2 (F, 20대) 지출
-            spendings.add(SpendingEntity.builder().userId("user2").date(LocalDate.now()).category("식비").amount(new BigDecimal("60000")).description("저녁").month(currentMonth).build());
-            spendings.add(SpendingEntity.builder().userId("user2").date(LocalDate.now()).category("외식").amount(new BigDecimal("40000")).description("카페").month(currentMonth).build());
-            spendings.add(SpendingEntity.builder().userId("user2").date(LocalDate.now()).category("교통/차량").amount(new BigDecimal("15000")).description("대중교통").month(currentMonth).build());
+            spendings.add(SpendingEntity.builder().userId("user2").date(LocalDate.now()).category("식비").amount(new BigDecimal("60000")).description("저녁").build());
+            spendings.add(SpendingEntity.builder().userId("user2").date(LocalDate.now()).category("외식").amount(new BigDecimal("40000")).description("카페").build());
+            spendings.add(SpendingEntity.builder().userId("user2").date(LocalDate.now()).category("교통/차량").amount(new BigDecimal("15000")).description("대중교통").build());
 
             // user3 (M, 40대) 지출
-            spendings.add(SpendingEntity.builder().userId("user3").date(LocalDate.now()).category("식비").amount(new BigDecimal("80000")).description("마트").month(currentMonth).build());
-            spendings.add(SpendingEntity.builder().userId("user3").date(LocalDate.now()).category("주거").amount(new BigDecimal("100000")).description("월세").month(currentMonth).build());
+            spendings.add(SpendingEntity.builder().userId("user3").date(LocalDate.now()).category("식비").amount(new BigDecimal("80000")).description("마트").build());
+            spendings.add(SpendingEntity.builder().userId("user3").date(LocalDate.now()).category("주거").amount(new BigDecimal("100000")).description("월세").build());
 
             // user4 (F, 40대) 지출
-            spendings.add(SpendingEntity.builder().userId("user4").date(LocalDate.now()).category("식비").amount(new BigDecimal("70000")).description("배달").month(currentMonth).build());
-            spendings.add(SpendingEntity.builder().userId("user4").date(LocalDate.now()).category("교육").amount(new BigDecimal("120000")).description("학원비").month(currentMonth).build());
+            spendings.add(SpendingEntity.builder().userId("user4").date(LocalDate.now()).category("식비").amount(new BigDecimal("70000")).description("배달").build());
+            spendings.add(SpendingEntity.builder().userId("user4").date(LocalDate.now()).category("교육").amount(new BigDecimal("120000")).description("학원비").build());
 
             spendingRepository.saveAll(spendings);
             log.info("[TestController] 샘플 지출 내역 {}건 생성 완료.", spendings.size());

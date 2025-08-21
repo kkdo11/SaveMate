@@ -1,6 +1,7 @@
 package kopo.newproject.service.impl;
 
 import kopo.newproject.dto.SpendingRequest;
+import kopo.newproject.dto.SpendingTotalDTO;
 import kopo.newproject.repository.entity.mongo.SpendingEntity;
 import kopo.newproject.repository.mongo.SpendingRepository;
 import kopo.newproject.service.ISpendingService;
@@ -8,18 +9,28 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
+
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service("SpendingService")
 @RequiredArgsConstructor
 public class SpendingService implements ISpendingService {
 
     private final SpendingRepository spendingRepository;
+    private final MongoTemplate mongoTemplate; // MongoTemplate 주입
 
     // 지출 내역 저장
     @Override
@@ -31,7 +42,6 @@ public class SpendingService implements ISpendingService {
                 .category(request.getCategory())
                 .amount(request.getAmount())
                 .description(request.getDescription())
-                .month(YearMonth.from(request.getDate())) // YearMonth 타입으로 설정
                 .build();
 
         return spendingRepository.save(entity);
@@ -39,10 +49,15 @@ public class SpendingService implements ISpendingService {
 
     @Override
     public List<SpendingEntity> getSpendings(String userId, YearMonth month, String category) {
-        if (month != null && category != null) {
-            return spendingRepository.findByUserIdAndMonthAndCategory(userId, month, category);
-        } else if (month != null) {
-            return spendingRepository.findByUserIdAndMonth(userId, month);
+        if (month != null) {
+            LocalDate startOfMonth = month.atDay(1);
+            LocalDate endOfMonth = month.atEndOfMonth().plusDays(1);
+
+            if (category != null) {
+                return spendingRepository.findByUserIdAndDateBetweenAndCategory(userId, startOfMonth, endOfMonth, category);
+            } else {
+                return spendingRepository.findByUserIdAndDateBetween(userId, startOfMonth, endOfMonth);
+            }
         } else if (category != null) {
             return spendingRepository.findByUserIdAndCategory(userId, category);
         } else {
@@ -94,7 +109,6 @@ public class SpendingService implements ISpendingService {
                 entity.setCategory(request.getCategory());
                 entity.setAmount(request.getAmount());
                 entity.setDescription(request.getDescription());
-                entity.setMonth(YearMonth.from(request.getDate()));
                 spendingRepository.save(entity);
 
                 return true;
@@ -108,8 +122,16 @@ public class SpendingService implements ISpendingService {
     //카테고리별 월간 사용액 합산
     @Override
     public BigDecimal calculateMonthlySpendingSum(String userId, int year, int month, String category) {
-        YearMonth yearMonth = YearMonth.of(year, month);
-        return spendingRepository.sumAmountByUserIdAndMonthAndCategory(userId, yearMonth, category);
+        LocalDate startOfMonth = LocalDate.of(year, month, 1);
+        LocalDate endOfMonth = startOfMonth.plusMonths(1);
+
+        SpendingTotalDTO result;
+        if (category != null) {
+            result = spendingRepository.sumAmountByDateBetweenAndCategory(userId, startOfMonth, endOfMonth, category);
+        } else {
+            result = spendingRepository.sumAmountByDateBetween(userId, startOfMonth, endOfMonth);
+        }
+        return result != null ? result.total() : BigDecimal.ZERO;
     }
 
     @Override
@@ -132,21 +154,46 @@ public class SpendingService implements ISpendingService {
 
         Map<String, Integer> result = new HashMap<>();
         for (SpendingEntity s : spendings) {
-            String monthKey = s.getMonth().toString(); // ex) "2025-03"
+            String monthKey = YearMonth.from(s.getDate()).toString(); // ex) "2025-03"
             int amount = s.getAmount().intValue(); // ✅ BigDecimal → int 변환
             result.put(monthKey, result.getOrDefault(monthKey, 0) + amount);
         }
         return result;
     }
 
+    // Helper class for aggregation result
+    private static class CategorySpending {
+        private String category;
+        private BigDecimal total;
+
+        // Getters and setters
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+        public BigDecimal getTotal() { return total; }
+        public void setTotal(BigDecimal total) { this.total = total; }
+    }
+
     @Override
     public Map<String, BigDecimal> getSpendingByCategory(String userId, YearMonth reportMonth) throws Exception {
-        List<SpendingEntity> spendings = getSpendings(userId, reportMonth, null);
-        Map<String, BigDecimal> spendingByCategory = new HashMap<>();
-        for (SpendingEntity spending : spendings) {
-            spendingByCategory.merge(spending.getCategory(), spending.getAmount(), BigDecimal::add);
-        }
-        return spendingByCategory;
+        LocalDate startOfMonth = reportMonth.atDay(1);
+        LocalDate endOfMonth = reportMonth.atEndOfMonth().plusDays(1);
+
+        MatchOperation matchStage = Aggregation.match(
+                new Criteria("userId").is(userId)
+                        .and("date").gte(startOfMonth).lt(endOfMonth)
+                        .and("category").nin(null, "") // 카테고리가 null이거나 빈 문자열이 아닌 경우만
+        );
+        GroupOperation groupStage = Aggregation.group("category")
+                .sum("amount").as("total");
+
+        Aggregation aggregation = Aggregation.newAggregation(matchStage, groupStage);
+
+        AggregationResults<CategorySpending> results = mongoTemplate.aggregate(
+                aggregation, SpendingEntity.class, CategorySpending.class
+        );
+
+        return results.getMappedResults().stream()
+                .collect(Collectors.toMap(CategorySpending::getCategory, CategorySpending::getTotal, (existing, replacement) -> existing.add(replacement))); // 중복 키 발생 시 값 합치기
     }
 
 

@@ -61,6 +61,12 @@ public class ReportServiceImpl implements IReportService {
         BigDecimal previousMonthTotalSpending = spendingService.calculateMonthlySpendingSum(userId, previousMonth.getYear(), previousMonth.getMonthValue(), null);
         Map<String, BigDecimal> spendingByCategory = spendingService.getSpendingByCategory(userId, reportMonth);
 
+        // ======================= DEBUG LOGGING START =======================
+        log.info("[DEBUG] Report Data for userId: {}, reportMonth: {}", userId, reportMonth);
+        log.info("[DEBUG] totalSpending: {}", totalSpending);
+        log.info("[DEBUG] spendingByCategory Map: {}", spendingByCategory);
+        // ======================= DEBUG LOGGING END =======================
+
         // 3. 예산 데이터
         List<BudgetEntity> budgets = budgetService.getBudgetsByUserIdAndYearMonth(userId, reportMonth.getYear(), reportMonth.getMonthValue());
         BigDecimal totalBudget = budgets.stream().map(BudgetEntity::getTotalBudget).reduce(BigDecimal.ZERO, BigDecimal::add);

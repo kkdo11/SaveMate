@@ -1,5 +1,5 @@
 
-package kopo.newproject.client;
+package kopo.newproject.feignClient;
 
 import kopo.newproject.dto.BokApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;

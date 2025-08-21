@@ -114,6 +114,15 @@
                 </div>
             </div>
 
+            <!-- ✅ 월간 리포트 수동 발송 버튼 -->
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">월간 리포트 다시 받기</h3>
+            <div class="flex items-center justify-center bg-gray-50 p-4 rounded-lg shadow-sm">
+                <button id="sendReportBtn" 
+                        class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition">
+                    지난달 리포트 이메일로 받기
+                </button>
+            </div>
+
         </div>
     </div>
 
@@ -186,6 +195,37 @@ document.addEventListener('DOMContentLoaded', () => {
         autoBudgetAdjustmentToggle.addEventListener('change', () => {
             const enabled = autoBudgetAdjustmentToggle.checked;
             updateAutoBudgetAdjustmentSetting(enabled);
+        });
+    }
+
+    // ✅ 월간 리포트 발송 버튼 이벤트 리스너
+    const sendReportBtn = document.getElementById('sendReportBtn');
+    if (sendReportBtn) {
+        sendReportBtn.addEventListener('click', async () => {
+            const userId = /*[[${userInfo.user_id}]]*/ 'defaultUserId'; // Thymeleaf를 통해 userId를 가져옴
+            const url = `/test/send-report/${userId}`;
+            
+            // 버튼 비활성화 및 로딩 표시
+            sendReportBtn.disabled = true;
+            sendReportBtn.textContent = '발송 중...';
+
+            try {
+                const response = await csrfFetch(url, { method: 'GET' });
+                const resultText = await response.text();
+
+                if (response.ok) {
+                    alert('리포트 발송 요청 성공! 이메일을 확인해주세요.');
+                } else {
+                    alert('리포트 발송 실패: ' + resultText);
+                }
+            } catch (error) {
+                console.error('리포트 발송 네트워크 오류:', error);
+                alert('리포트 발송 중 네트워크 오류가 발생했습니다.');
+            } finally {
+                // 버튼 다시 활성화
+                sendReportBtn.disabled = false;
+                sendReportBtn.textContent = '지난달 리포트 이메일로 받기';
+            }
         });
     }
 });

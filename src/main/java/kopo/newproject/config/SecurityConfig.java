@@ -48,6 +48,7 @@ public class SecurityConfig {
         AntPathRequestMatcher apiMatcher = new AntPathRequestMatcher("/api/**");
         AntPathRequestMatcher testApiMatcher = new AntPathRequestMatcher("/test/**");
 
+
         return http
                 // 1. CSRF 보호 설정
                 .csrf(csrf -> csrf
@@ -100,6 +101,10 @@ public class SecurityConfig {
                 )
                 // 6. 예외 처리 (가장 중요)
                 .exceptionHandling(exception -> exception
+                        .defaultAuthenticationEntryPointFor(
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                testApiMatcher
+                        )
                         // 인증되지 않은 사용자가 API에 접근 시, 로그인 페이지로 리다이렉트 대신 401 Unauthorized 상태 코드 반환
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
