@@ -46,6 +46,7 @@ public class SecurityConfig {
 
         // API 요청에 대한 RequestMatcher 정의
         AntPathRequestMatcher apiMatcher = new AntPathRequestMatcher("/api/**");
+        AntPathRequestMatcher testApiMatcher = new AntPathRequestMatcher("/test/**");
 
         return http
                 // 1. CSRF 보호 설정
@@ -58,7 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
 
                         // API 경로는 인증된 사용자만 접근 가능
-                        .requestMatchers(apiMatcher).authenticated()
+                        .requestMatchers(apiMatcher, testApiMatcher).authenticated()
 
                         // 인증 없이 접근 가능한 페이지 (로그인, 회원가입, 대시보드, 소비내역, 예산, 저축, AI분석 등)
                         .requestMatchers(

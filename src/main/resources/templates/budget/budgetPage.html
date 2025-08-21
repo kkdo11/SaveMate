@@ -5,65 +5,34 @@
     <title>SAVEMATE - 예산 설정</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <meta name="_csrf" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"
-    />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <script th:inline="javascript">
         const isAuthenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
     </script>
-    <script>
-        function csrfFetch(url, options = {}) {
-            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute("content");
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute("content");
-
-            options.headers = {
-                'Content-Type': 'application/json',
-                [csrfHeader]: csrfToken,
-                ...(options.headers || {})
-            };
-
-            return fetch(url, {
-                ...options,
-                credentials: 'same-origin'
-            });
-        }
-
-
-
-    </script>
-
-
-
 </head>
 <body class="bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 text-gray-800 font-sans leading-relaxed min-h-screen">
 
-<!-- ✅ Header -->
 <div th:replace="~{navbar :: navbar}"></div>
 
-<!-- ✅ Main Content -->
 <main class="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow mt-8">
     <h2 class="text-2xl font-semibold mb-4">예산 설정</h2>
     <p id="authNotice" class="text-sm text-red-500 hidden">⚠️ 로그인 후 예산을 등록할 수 있습니다.</p>
 
-    <!-- 월별 예산 조회 영역 -->
     <div class="mb-8">
         <form id="monthSearchForm" class="flex items-center space-x-2 mb-4">
             <label for="searchMonth" class="text-sm">월별 예산 조회</label>
             <input type="month" id="searchMonth" class="border rounded px-2 py-1" />
             <button type="button" id="searchBudgetBtn" class="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition">조회</button>
+            <button type="button" id="adjustCpiBudgetBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                물가 반영
+            </button>
         </form>
         <div id="monthlyBudgetResult">
-            <!-- 월별 예산 결과 테이블이 여기에 표시됩니다 -->
-        </div>
-
-        <!-- 물가 반영 예산 조정 버튼 -->
-        <div class="mt-4 text-center">
-            <button type="button" id="adjustCpiBudgetBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
-                물가 반영 예산 지금 조정하기
-            </button>
+            <div id="budgetList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
         </div>
     </div>
 
-    <!-- 입력 폼 -->
     <form id="budgetForm" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
         <input type="hidden" id="budgetId" />
 
@@ -91,11 +60,6 @@
             <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded w-full hover:bg-indigo-700">저장</button>
         </div>
     </form>
-
-    <!-- 예산 카드 목록 -->
-    <div id="budgetList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- 카드 렌더링 영역 -->
-    </div>
 </main>
 
 <script src="/js/budget.js"></script>

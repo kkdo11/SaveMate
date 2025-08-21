@@ -74,7 +74,7 @@ public class BokServiceImpl implements IBokService {
         // 3. 데이터 검증 및 등락률 계산
         if (cpiData == null || cpiData.size() < 2) {
             log.error("Cannot calculate growth rate: Not enough data points in the last 12 months (found {}).", cpiData != null ? cpiData.size() : 0);
-            return 0.0;
+            return 0.0; // 데이터 부족 시, 성장률 0.0으로 처리
         }
 
         try {

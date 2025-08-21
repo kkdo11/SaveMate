@@ -94,9 +94,10 @@ public class BudgetService implements IBudgetService {
         return false;
     }
 
-    // 특정 연/월 예산 조회
+    // 특정 연/월 예산 조회 (단일) -> 사용처가 있는지 확인 필요
+    @Override
     public BudgetEntity getBudgetByUserIdAndYearMonth(String userId, int year, int month) {
-        Optional<BudgetEntity> optional = budgetRepository.findByUserIdAndYearAndMonth(userId, year, month);
+        Optional<BudgetEntity> optional = budgetRepository.findByUserIdAndYearAndMonth(userId, year, month).stream().findFirst();
         if (optional.isEmpty()) return null;
 
         BudgetEntity entity = optional.get();
@@ -129,6 +130,7 @@ public class BudgetService implements IBudgetService {
 
 
     // 유저별 전체 예산 목록 조회
+    @Override
     public List<BudgetEntity> getBudgetsByUserId(String userId) {
         List<BudgetEntity> budgets = budgetRepository.findAllByUserId(userId);
         for (BudgetEntity b : budgets) {
@@ -142,6 +144,7 @@ public class BudgetService implements IBudgetService {
 
 
     // 특정 연/월 모든 예산(카테고리별) 조회
+    @Override
     public List<BudgetEntity> getBudgetsByUserIdAndYearMonth(String userId, int year, int month) {
         List<BudgetEntity> budgets = budgetRepository.findAllByUserIdAndYearAndMonth(userId, year, month);
         for (BudgetEntity b : budgets) {

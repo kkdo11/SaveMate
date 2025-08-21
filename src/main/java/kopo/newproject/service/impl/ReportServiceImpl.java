@@ -196,7 +196,7 @@ public class ReportServiceImpl implements IReportService {
     @Override
     public void sendMonthlyReportToAllUsers() {
         log.info("월간 리포트 발송 스케줄러 시작");
-        YearMonth reportMonth = YearMonth.now(); // 이번 달을 기준으로 리포트 생성
+        YearMonth reportMonth = YearMonth.now().minusMonths(1); // 지난달을 기준으로 리포트 생성
 
         List<UserInfoEntity> allUsers = null;
         try {

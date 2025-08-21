@@ -2,6 +2,7 @@ package kopo.newproject.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kopo.newproject.dto.GptResponseDTO;
 import kopo.newproject.dto.PredictionDTO;
 import kopo.newproject.repository.entity.mongo.AIAnalysisEntity;
 import kopo.newproject.repository.entity.mongo.SpendingEntity;
@@ -22,10 +23,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -140,14 +138,17 @@ public class AIAnalysisService implements IAIAnalysisService {
             );
 
             HttpEntity<?> entity = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = restTemplate.exchange(openAiUrl, HttpMethod.POST, entity, String.class);
+            ResponseEntity<GptResponseDTO> response = restTemplate.exchange(openAiUrl, HttpMethod.POST, entity, GptResponseDTO.class);
 
-            String content = response.getBody();
-            int start = content.indexOf("{");
-            int end = content.lastIndexOf("}");
-            String cleanJson = content.substring(start, end + 1);
+            // GPT 응답에서 실제 content 추출
+            String jsonContent = Optional.ofNullable(response.getBody())
+                    .map(GptResponseDTO::getChoices)
+                    .filter(choices -> !choices.isEmpty())
+                    .map(choices -> choices.get(0).getMessage().getContent())
+                    .orElseThrow(() -> new RuntimeException("GPT 응답에서 content를 찾을 수 없습니다."));
 
-            Map<String, String> parsed = objectMapper.readValue(cleanJson, new TypeReference<>() {});
+            // content 내부의 JSON 파싱
+            Map<String, String> parsed = objectMapper.readValue(jsonContent, new TypeReference<>() {});
 
             AIAnalysisEntity analysis = AIAnalysisEntity.builder()
                     .userId(userId)
@@ -167,21 +168,33 @@ public class AIAnalysisService implements IAIAnalysisService {
     }
 
     private String generatePrompt(Map<String, Object> data) {
-        return String.format("""
-Analyze the following user spending data and provide insights. The response must be in JSON format.
+        return """
+당신은 사용자의 소비 데이터를 분석하는 전문 금융 분석 AI입니다.
+목표는 소비 습관을 평가하고 절약을 위한 행동 지침을 제공하는 것입니다.
 
-User Data:
+❗ 반드시 아래 조건을 따르세요:
+- 결과는 오직 **JSON 형식**으로만 반환하세요 (마크다운, 코드블럭, 부가 설명 포함 금지).
+- 키 이름은 영문 (summary, habit, tip, anomaly, guide) 으로 고정합니다.
+- 각 키의 값은 **6~7 문장으로 구체적인 조언과 함께** 작성하세요.
+- 문장은 한국어로 작성하고, **공손체/설명체로 통일**하세요.
+
+ 사용자 데이터:
 %s
 
-JSON Response Format:
+ JSON 응답 형식과 작성 가이드:
+
 {
-  "summary": "Monthly summary...",
-  "habit": "Spending habit analysis...",
-  "tip": "Savings tips...",
-  "anomaly": "Anomaly detection...",
-  "guide": "Next month's guide..."
+  "summary": "이 달의 예산과 총 소비 금액을 요약하고, 초과/잔여 예산이 있는 카테고리를 서술합니다.",
+  "habit": "소비 습관에서 눈에 띄는 비율, 자주 지출된 항목, 반복적인 패턴 등을 분석합니다.",
+  "tip": "절약을 위한 현실적인 팁 2가지 이상 제시 (구독 취소, 할인 활용 등).",
+  "anomaly": "예산 초과 또는 특이 지출(비정상적 금액/날짜 등)을 식별하고 간단한 원인을 설명합니다.",
+  "guide": "다음 달에 유의해야 할 행동 지침 및 소비 습관 개선 전략을 제안합니다."
 }
-""", data.toString());
+
+
+
+⚠️ 반드시 위 형식을 그대로 따르세요. 추가 설명, 제목, 마크다운, 주석 없이 JSON 그 자체만 출력하세요.
+""".formatted(data.toString());
     }
 
     @Override
