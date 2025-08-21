@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.4'
+    id 'org.springframework.boot' version '3.2.7'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -24,12 +24,16 @@ repositories {
 }
 
 dependencies {
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation platform('org.springframework.cloud:spring-cloud-dependencies:2023.0.2')
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    implementation 'commons-io:commons-io:2.11.0' // IOUtils
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
@@ -43,6 +47,8 @@ dependencies {
 
 
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
 }
 

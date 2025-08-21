@@ -6,6 +6,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime; // LocalDateTime 임포트 추가
 import java.util.Optional;
 
 
@@ -16,7 +17,6 @@ import java.util.Optional;
 @DynamicInsert
 @DynamicUpdate
 @Builder
-@Cacheable
 @Entity
 public class BudgetEntity {
 
@@ -29,11 +29,10 @@ public class BudgetEntity {
     @Column(name = "user_id")
     private String userId;
 
-    @NonNull
     @Column(name = "year")
     private int year;
 
-    @NonNull
+    
     @Column(name = "month")
     private int month;
 
@@ -42,12 +41,15 @@ public class BudgetEntity {
     private BigDecimal totalBudget;
 
     @Transient
-    @Setter
+    @Setter // usedBudget는 Transient 필드이므로 setter 유지
     private BigDecimal usedBudget;
 
     @NonNull
     @Column(name = "category")
     private String category;
+
+    @Column(name = "last_adjusted_date") // 마지막 조정 일자 필드 추가
+    private LocalDateTime lastAdjustedDate;
 
     
     @Transient
@@ -55,6 +57,14 @@ public class BudgetEntity {
         return Optional.ofNullable(totalBudget)
                 .orElse(BigDecimal.ZERO)
                 .subtract(Optional.ofNullable(usedBudget).orElse(BigDecimal.ZERO));
+    }
+
+    // ✅ 비즈니스 로직: 예산 정보 업데이트
+    public void updateBudgetInfo(int year, int month, String category, BigDecimal totalBudget) {
+        this.year = year;
+        this.month = month;
+        this.category = category;
+        this.totalBudget = totalBudget;
     }
 
 }

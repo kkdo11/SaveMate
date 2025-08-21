@@ -17,7 +17,15 @@ public record UserInfoDTO(
 
         String created_at,
 
-        String exist_yn
+        String exist_yn,
+
+        Boolean globalAlertEnabled,
+
+        Boolean autoBudgetAdjustmentEnabled,
+
+        String gender,
+
+        String birthDate
 
 
 ) {

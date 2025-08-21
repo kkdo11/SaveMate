@@ -5,6 +5,8 @@ import kopo.newproject.dto.PasswordChangeRequest;
 import kopo.newproject.dto.UserInfoDTO;
 import kopo.newproject.repository.entity.jpa.UserInfoEntity;
 
+import java.util.List;
+
 public interface IUserInfoService {
 
     //아이디 중복체크하기
@@ -34,8 +36,11 @@ public interface IUserInfoService {
     int getUserLogin(UserInfoDTO pDTO) throws Exception;
 
 
-
     boolean changePassword(String user_id, PasswordChangeRequest request);
 
+    boolean updateGlobalAlertSetting(String userId, Boolean enabled) throws Exception;
 
+    boolean updateAutoBudgetAdjustmentSetting(String userId, Boolean enabled) throws Exception;
+
+    List<UserInfoEntity> getAllUsers() throws Exception;
 }

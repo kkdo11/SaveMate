@@ -4,7 +4,6 @@ import kopo.newproject.dto.GoalDTO;
 
 import kopo.newproject.service.impl.GoalService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/goalAPI")
 @RequiredArgsConstructor
@@ -32,7 +30,6 @@ public class GoalAPIController {
             GoalDTO created = goalService.saveGoal(dto);
             return ResponseEntity.ok(created);
         } catch (Exception e) {
-            log.error("목표 생성 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -44,7 +41,6 @@ public class GoalAPIController {
             List<GoalDTO> goals = goalService.getGoalsByUser(getCurrentUserId());
             return ResponseEntity.ok(goals);
         } catch (Exception e) {
-            log.error("목표 목록 조회 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -60,7 +56,6 @@ public class GoalAPIController {
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
-            log.error("목표 단건 조회 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -72,7 +67,6 @@ public class GoalAPIController {
             GoalDTO updated = goalService.updateGoal(goalId, dto);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
-            log.error("목표 수정 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -84,7 +78,6 @@ public class GoalAPIController {
             goalService.deleteGoal(goalId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            log.error("목표 삭제 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

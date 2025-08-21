@@ -1,14 +1,12 @@
 package kopo.newproject.service.impl;
 
-
-
-
 import kopo.newproject.dto.MailDTO;
 import kopo.newproject.dto.MsgDTO;
 import kopo.newproject.dto.PasswordChangeRequest;
 import kopo.newproject.dto.UserInfoDTO;
-import kopo.newproject.repository.jpa.UserInfoRepository;
 import kopo.newproject.repository.entity.jpa.UserInfoEntity;
+import kopo.newproject.repository.jpa.UserInfoRepository;
+import kopo.newproject.service.IMailService;
 import kopo.newproject.service.IUserInfoService;
 import kopo.newproject.util.CmmUtil;
 import kopo.newproject.util.CreatePassword;
@@ -18,17 +16,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-//@RequiredArgsConstructor는 초기화 되지않은 final 필드나,
-// @NonNull 이 붙은 필드에 대해 생성자를 생성
 @Service
 public class UserInfoService implements IUserInfoService {
-    
+
     //회원관련 repository
     private final UserInfoRepository userInfoRepository;
 
@@ -40,31 +38,23 @@ public class UserInfoService implements IUserInfoService {
 
 
     @Override
-    public UserInfoDTO getUserIdExists(@NonNull  UserInfoDTO pDTO) throws Exception {
-        log.info("getUserIdExists start", this.getClass().getName());
-
-        log.info("userInfoDTO: {}", pDTO);
+    public UserInfoDTO getUserIdExists(@NonNull UserInfoDTO pDTO) throws Exception {
 
         String user_id = CmmUtil.nvl(pDTO.user_id());
-        
+
         //DB에서 아이디 중복 여부 확인
         boolean exists = userInfoRepository.findByUserId(user_id).isPresent();
-        
+
         //존재 여부에 따라 DTO 생성
         UserInfoDTO rDTO = UserInfoDTO.builder()
-                        .exist_yn(exists ? "Y": "N")
-                        .build();
-        log.info("userInfoDTO: {}", rDTO);
-
-        log.info("getUserIdExists end", this.getClass().getName());
+                .exist_yn(exists ? "Y" : "N")
+                .build();
 
         return rDTO;
     }
-    @Override
-    public UserInfoDTO getEmailExists(@NonNull  UserInfoDTO pDTO) throws Exception {
-        log.info("{}.getEmailExists start", this.getClass().getName());
 
-        log.info("userInfoDTO: {}", pDTO);
+    @Override
+    public UserInfoDTO getEmailExists(@NonNull UserInfoDTO pDTO) throws Exception {
 
         String email = CmmUtil.nvl(pDTO.email());
 
@@ -73,21 +63,14 @@ public class UserInfoService implements IUserInfoService {
 
         //존재 여부에 따라 DTO 생성
         UserInfoDTO rDTO = UserInfoDTO.builder()
-                .exist_yn(exists ? "Y": "N")
+                .exist_yn(exists ? "Y" : "N")
                 .build();
-
-        log.info("userInfoDTO: {}", rDTO);
-
-        log.info("{}.getEmailExists end", this.getClass().getName());
 
         return rDTO;
     }
 
     @Override
     public int insertUserInfo(@NonNull UserInfoDTO pDTO) throws Exception {
-        log.info("insertUserInfo start", this.getClass().getName());
-
-        log.info("userInfoDTO: {}", pDTO);
 
         int res; //회원가입 성공 : 1  ,  아이디 중복으로 인한 가입 취소 : 2   ,   그 외 에러 : 3
 
@@ -95,6 +78,8 @@ public class UserInfoService implements IUserInfoService {
         String email = CmmUtil.nvl(pDTO.email());
         String password = CmmUtil.nvl(pDTO.password());
         String name = CmmUtil.nvl(pDTO.name());
+        String gender = CmmUtil.nvl(pDTO.gender()); // gender 추가
+        String birthDate = CmmUtil.nvl(pDTO.birthDate()); // birthDate 추가
 
         //암호화된 패스워드
         String encPassword = passwordEncoder.encode(password);
@@ -103,94 +88,60 @@ public class UserInfoService implements IUserInfoService {
         Optional<UserInfoEntity> rEntity = userInfoRepository.findByUserId(user_id);
 
         if (rEntity.isPresent()) {
-            res=2;
-        }else {
+            res = 2;
+        } else {
             UserInfoEntity userInfoEntity = UserInfoEntity.builder()
                     .userId(user_id).email(email)
                     .password(encPassword).name(name)
+                    .gender(gender) // gender 추가
+                    .birthDate(birthDate) // birthDate 추가
                     .build();
 
             //회원정보 DB에 저장
             userInfoRepository.save(userInfoEntity);
-            
+
             //JPA의 SAVE함수는 데이터 값에 따라 등록 수정을 수행함
             //실행한 save함수가 DB에 잘 등록되었는지 100% 확신이 불가능하기에
             // 회원가입후 조회를 수행한다
             //회원가입 중복 방지를 위해 DB에서 데이터 조회
             res = userInfoRepository.findByUserId(user_id).isPresent() ? 1 : 0;
+            if (res == 1) {
+            } else {
+            }
         }
-        
-        log.info("insertUserInfo end", this.getClass().getName());
+
         return res;
     }
-
-/*    //로그인을 위해 아이디와 비밀번호가 일치하는지 확인하기
 
     @Override
     public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
 
-        log.info("getUserLoginCheck start", this.getClass().getName());
-
         String user_id = CmmUtil.nvl(pDTO.user_id());
         String password = CmmUtil.nvl(pDTO.password());
 
-        log.info("user_id : {},password : {} ",user_id,password);
 
-        boolean res =  userInfoRepository.findByUserIdAndPassword(user_id,password).isPresent();
-
-        log.info("getUserLoginCheck end", this.getClass().getName());
-
-        return res ? 1 : 0;
-
-
-
-    }*/
-@Override
-public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
-    log.info("getUserLoginCheck start", this.getClass().getName());
-
-    String user_id = CmmUtil.nvl(pDTO.user_id());
-    String password = CmmUtil.nvl(pDTO.password());
-
-    log.info("user_id : {}, password : {}", user_id, password);
-
-    Optional<UserInfoEntity> userOpt = userInfoRepository.findByUserId(user_id);
-
-    if (userOpt.isPresent()) {
-        String encPassword = userOpt.get().getPassword();
-        if (passwordEncoder.matches(password, encPassword)) {
-            log.info("비밀번호 일치");
-            return 1;
-        } else {
-            log.info("비밀번호 불일치");
-            return 0;
-        }
-    }
-
-    log.info("아이디 없음");
     return 0;
-}
+    }
 
 
     //아이디 찾기
     @Override
     public UserInfoDTO findUserIdByNameAndEmail(UserInfoDTO pDTO) throws Exception {
-        log.info("{}.findUserIdByNameAndEmail start", this.getClass().getName());
 
         String name = CmmUtil.nvl(pDTO.name());
         String email = CmmUtil.nvl(pDTO.email());
 
         // 이름과 이메일이 일치하는 사용자 조회
-        Optional<UserInfoEntity> rDTO = userInfoRepository.findByNameAndEmail(name, email);
+        Optional<UserInfoEntity> rEntity = userInfoRepository.findByNameAndEmail(name, email);
 
-        if (rDTO.isPresent()) {
-            log.info("아이디 조회 성공: {}", rDTO.get().getUserId());
+        if (rEntity.isPresent()) {
+            log.info("[UserInfoService] 아이디 찾기 성공 - user_id: {}", rEntity.get().getUserId());
             return UserInfoDTO.builder()
-                    .user_id(rDTO.get().getUserId())  // user_id를 결과로 리턴
+                    .user_id(rEntity.get().getUserId())  // user_id를 결과로 리턴
                     .build();
         }
 
-        log.info("일치하는 사용자가 존재하지 않음.");
+        log.warn("[UserInfoService] 아이디 찾기 실패: 일치하는 정보 없음 - name: {}, email: {}", name, email);
         return null;
     }
 
@@ -198,38 +149,34 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
     //비밀번호 찾기
     @Override
     public UserInfoDTO findPWDByIdAndEmail(UserInfoDTO pDTO) throws Exception {
-        log.info("{}.findPWDByIdAndEmail start", this.getClass().getName());
 
         String id = CmmUtil.nvl(pDTO.user_id());
         String email = CmmUtil.nvl(pDTO.email());
 
         // 아이디와 이메일이 일치하는 사용자 조회
-        Optional<UserInfoEntity> rDTO = userInfoRepository.findByUserIdAndEmail(id, email);
+        Optional<UserInfoEntity> rEntity = userInfoRepository.findByUserIdAndEmail(id, email);
 
-        if (rDTO.isPresent()) {
-            log.info("아이디 조회 성공 : {}", rDTO.get().getUserId());
+        if (rEntity.isPresent()) {
+            log.info("[UserInfoService] 비밀번호 찾기 성공 - user_id: {}", rEntity.get().getUserId());
             return UserInfoDTO.builder()
-                    .user_id(rDTO.get().getUserId())  // user_id를 결과로 리턴
+                    .user_id(rEntity.get().getUserId())  // user_id를 결과로 리턴
                     .build();
         }
 
-        log.info("일치하는 사용자가 존재하지 않음.");
+        log.warn("[UserInfoService] 비밀번호 찾기 실패: 일치하는 정보 없음 - userId: {}, email: {}", id, email);
         return null;
     }
-
-
-
 
 
     //임시 비밀번호 발급
     @Override
     public MsgDTO resetUserPassword(String user_id, String email) throws Exception {
-        log.info("비밀번호 재발급 요청: user_id={}, email={}", user_id, email);
 
         // 사용자 정보 조회
         Optional<UserInfoEntity> userOpt = userInfoRepository.findByUserIdAndEmail(user_id, email);
 
         if (userOpt.isEmpty()) {
+            log.warn("[UserInfoService] 비밀번호 재발급 실패: 일치하는 사용자 없음 - userId: {}, email: {}", user_id, email);
             return MsgDTO.builder()
                     .result(0)
                     .msg("입력한 정보와 일치하는 사용자가 없습니다.")
@@ -245,6 +192,7 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
         // 비밀번호 업데이트
         user.changePassword(encPassword);
         userInfoRepository.save(user);
+        log.info("[UserInfoService] 사용자 {}의 비밀번호가 임시 비밀번호로 업데이트됨.", user_id);
 
         // 이메일 전송
         MailDTO mailDTO = MailDTO.builder()
@@ -257,11 +205,13 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
         int mailResult = mailService.doSendMail(mailDTO);
 
         if (mailResult == 1) {
+            log.info("[UserInfoService] 임시 비밀번호 이메일 전송 성공 - {}", email);
             return MsgDTO.builder()
                     .result(1)
                     .msg("임시 비밀번호가 이메일로 전송되었습니다.")
                     .build();
         } else {
+            log.error("[UserInfoService] 임시 비밀번호 이메일 전송 실패 - {}", email);
             return MsgDTO.builder()
                     .result(0)
                     .msg("임시 비밀번호 생성은 성공했지만, 이메일 전송에 실패했습니다.")
@@ -278,13 +228,16 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
             UserInfoEntity user = optionalUser.get();
 
             if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                log.warn("[UserInfoService] 비밀번호 변경 실패: 현재 비밀번호 불일치 - {}", user_id);
                 return false; // 현재 비밀번호 불일치
             }
 
             user.changePassword(passwordEncoder.encode(request.getNewPassword()));
             userInfoRepository.save(user);
+            log.info("[UserInfoService] 사용자 {}의 비밀번호가 성공적으로 변경됨.", user_id);
             return true;
         }
+        log.warn("[UserInfoService] 비밀번호 변경 실패: 사용자 찾을 수 없음 - {}", user_id);
         return false;
     }
 
@@ -299,22 +252,61 @@ public int getUserLogin(@NonNull UserInfoDTO pDTO) throws Exception {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String createdAtStr = entity.getCreatedAt().format(formatter);
 
-            return UserInfoDTO.builder()
+            UserInfoDTO rDTO = UserInfoDTO.builder()
                     .user_id(entity.getUserId())
                     .email(entity.getEmail())
                     .password(null) // 보안상 제외
                     .name(entity.getName())
                     .created_at(createdAtStr)
+                    .globalAlertEnabled(entity.getGlobalAlertEnabled())
+                    .gender(entity.getGender())
+                    .birthDate(entity.getBirthDate())
                     .exist_yn(null)
                     .build();
+            log.info("[UserInfoService] findByUserId end - userId: {}", user_id);
+            return rDTO;
         } else {
+            log.warn("[UserInfoService] findByUserId 실패: 사용자 찾을 수 없음 - userId: {}", user_id);
             return null;
         }
     }
 
+    @Override
+    @Transactional
+    public boolean updateGlobalAlertSetting(String userId, Boolean enabled) throws Exception {
+        Optional<UserInfoEntity> optionalUser = userInfoRepository.findByUserId(userId);
+        if (optionalUser.isPresent()) {
+            UserInfoEntity user = optionalUser.get();
+            user.setGlobalAlertEnabled(enabled); // UserInfoEntity에 setter가 없으면 오류 발생
+            userInfoRepository.save(user);
+            log.info("[UserInfoService] 사용자 {}의 전역 알림 설정이 {}로 변경되었습니다.", userId, enabled);
+            return true;
+        }
+        log.warn("[UserInfoService] updateGlobalAlertSetting 실패: 사용자 찾을 수 없음 - userId: {}", userId);
+        return false;
+    }
 
+    @Override
+    @Transactional
+    public boolean updateAutoBudgetAdjustmentSetting(String userId, Boolean enabled) throws Exception {
+        Optional<UserInfoEntity> optionalUser = userInfoRepository.findByUserId(userId);
+        if (optionalUser.isPresent()) {
+            UserInfoEntity user = optionalUser.get();
+            user.setAutoBudgetAdjustmentEnabled(enabled);
+            userInfoRepository.save(user);
+            log.info("[UserInfoService] 사용자 {}의 자동 예산 조정 설정이 {}로 변경되었습니다.", userId, enabled);
+            return true;
+        }
+        log.warn("[UserInfoService] updateAutoBudgetAdjustmentSetting 실패: 사용자 찾을 수 없음 - userId: {}", userId);
+        return false;
+    }
+
+    @Override
+    public List<UserInfoEntity> getAllUsers() throws Exception {
+        log.info("Getting all users");
+        return userInfoRepository.findAll();
+    }
 }
-
 
 
 

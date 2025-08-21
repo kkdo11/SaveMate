@@ -1,7 +1,9 @@
 package kopo.newproject.repository.mongo;
 
+import kopo.newproject.dto.SpendingTotalDTO;
 import kopo.newproject.repository.entity.mongo.SpendingEntity;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 
@@ -31,8 +33,14 @@ public interface SpendingRepository extends MongoRepository<SpendingEntity, Obje
         List<SpendingEntity> list = findByUserIdAndMonthAndCategory(userId, month, category);
         return list.stream()
                 .map(e -> Optional.ofNullable(e.getAmount()).orElse(BigDecimal.ZERO))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, (acc, amount) -> acc.add(amount));
     }
+
+    @Aggregation(pipeline = {
+        "{$match: { 'userId': ?0, 'category': ?1, 'month': ?2 }}",
+        "{$group: { '_id': null, 'total': { $sum: '$amount' } }}"
+    })
+    SpendingTotalDTO sumAmountByUserIdAndCategoryAndMonth(String userId, String category, String month);
 
     List<SpendingEntity> findByUserIdAndDateBetween(String userId, LocalDate start, LocalDate end);
 

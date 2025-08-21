@@ -1,5 +1,43 @@
 const apiUrl = '/budgetAPI';
 
+// CSRF 토큰을 포함한 fetch 래퍼 함수
+async function csrfFetch(url, options = {}) {
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    options.headers = {
+        ...options.headers,
+        [csrfHeader]: csrfToken,
+        'Content-Type': 'application/json'
+    };
+
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        const error = new Error('Unauthorized');
+        error.status = 401;
+        throw error;
+    }
+
+    if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+
+    return response;
+}
+
+// 비인증 상태 UI 렌더링 함수 (재사용)
+function renderUnauthorized(elementId, message) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-10 border rounded-lg bg-gray-50 col-span-1 sm:col-span-2 lg:col-span-3">
+            <p class="font-medium">${message}</p>
+            <a href='/user/login' class='text-blue-600 hover:underline mt-2 inline-block text-sm'>로그인 페이지로 이동</a>
+        </div>
+    `;
+}
+
 // ✅ 초기 로딩
 window.onload = () => {
     if (!isAuthenticated) {
@@ -19,10 +57,23 @@ window.onload = () => {
     document.getElementById('searchMonth').value = thisMonth;
 
     // 현재 월 예산 자동 조회 및 렌더링
-    csrfFetch(`/budgetAPI/monthly?month=${thisMonth}`)
-        .then(res => res.json())
-        .then(data => renderBudgetCards(data));
+    searchMonthlyBudget(thisMonth);
 };
+
+// 월별 예산 조회 함수
+function searchMonthlyBudget(month) {
+    csrfFetch(`/budgetAPI/monthly?month=${month}`)
+        .then(res => res.json())
+        .then(data => renderBudgetCards(data))
+        .catch(err => {
+            if (err.status === 401) {
+                renderUnauthorized('budgetList', '예산 내역을 보려면 로그인이 필요합니다.');
+            } else {
+                console.error("Failed to fetch budget:", err);
+                document.getElementById('budgetList').innerHTML = '<p class="text-center text-red-500">데이터를 불러오는 중 오류가 발생했습니다.</p>';
+            }
+        });
+}
 
 
 // ✅ 예산 폼 제출 처리
@@ -163,4 +214,39 @@ document.getElementById('searchBudgetBtn').addEventListener('click', function() 
             renderBudgetCards(data); // budgetList에 월별 예산 표시
         })
         .catch(() => alert('예산 조회에 실패했습니다.'));
+});
+
+// ✅ 물가 반영 예산 조정 버튼 클릭 이벤트
+document.getElementById('adjustCpiBudgetBtn').addEventListener('click', async function() {
+    if (!isAuthenticated) {
+        alert('로그인 후 이용해주세요.');
+        return;
+    }
+
+    if (!confirm('현재 월의 예산을 물가 상승률에 따라 조정하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        return;
+    }
+
+    try {
+        const response = await csrfFetch('/budgetAPI/actions/adjust-cpi', {
+            method: 'PUT',
+        });
+
+        if (response.ok) {
+            const adjustedBudgets = await response.json();
+            alert('예산이 성공적으로 조정되었습니다! 페이지를 새로고침하여 확인하세요.');
+            // 조정 후 현재 월 예산 다시 로드
+            const selectedMonth = document.getElementById('searchMonth').value;
+            searchMonthlyBudget(selectedMonth);
+        } else if (response.status === 401) {
+            renderUnauthorized('budgetList', '예산 조정을 위해 로그인이 필요합니다.');
+        } else {
+            const errorText = await response.text();
+            console.error('예산 조정 실패:', errorText);
+            alert('예산 조정 실패: ' + errorText);
+        }
+    } catch (error) {
+        console.error('네트워크 오류:', error);
+        alert('네트워크 오류가 발생했습니다.');
+    }
 });

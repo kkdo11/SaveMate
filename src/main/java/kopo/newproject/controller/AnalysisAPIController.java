@@ -1,18 +1,24 @@
 package kopo.newproject.controller;
 
+import kopo.newproject.dto.PredictionDTO;
 import kopo.newproject.service.IAIAnalysisService;
 import kopo.newproject.service.impl.AnalysisPreprocessorService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.time.YearMonth;
+import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/analysis")
 @RequiredArgsConstructor
 public class AnalysisAPIController {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalysisAPIController.class);
 
     private final IAIAnalysisService aiAnalysisService;
     private final AnalysisPreprocessorService preprocessorService;
@@ -34,16 +40,49 @@ public class AnalysisAPIController {
         }
     }
 
-    // 월별 분석 내역 조회 (복수 리턴 대비 List로)
+    // 월별 원본 소비 데이터 조회 (카테고리별 합계)
+    @GetMapping("/{yearMonth}/raw-spending")
+    public ResponseEntity<?> getRawSpendingByMonth(@PathVariable String yearMonth) {
+        try {
+            String userId = getCurrentUserId();
+            log.info("INFO: Get raw spending for userId={}, month={}", userId, yearMonth);
+
+            // 전처리 서비스를 사용하여 데이터 생성
+            Map<String, Object> analysisInput = preprocessorService.generateAnalysisInput(userId, YearMonth.parse(yearMonth));
+
+            // 필요한 데이터만 추출하여 반환
+            Object spendingByCategory = analysisInput.get("spending_by_category");
+
+            if (spendingByCategory == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 월의 소비 내역이 없습니다.");
+            }
+
+            return ResponseEntity.ok(spendingByCategory);
+
+        } catch (Exception e) {
+            log.error("ERROR: Failed to get raw spending for month {}: {}", yearMonth, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("소비 내역 조회에 실패했습니다.");
+        }
+    }
+
+    // 월별 최신 분석 내역 조회
     @GetMapping("/{yearMonth}")
     public ResponseEntity<?> getAnalysisByMonth(@PathVariable String yearMonth) {
         try {
             String userId = getCurrentUserId();
-            var analyses = aiAnalysisService.getAnalysisByMonth(userId, yearMonth);
-            return ResponseEntity.ok(analyses);
+            log.info("INFO: Get analysis for userId={}, month={}", userId, yearMonth);
+            var analysis = aiAnalysisService.getAnalysisByMonth(userId, yearMonth);
+
+            if (analysis == null) {
+                log.warn("WARN: No analysis found for userId={}, month={}", userId, yearMonth);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 월의 분석 내역이 없습니다.");
+            }
+
+            return ResponseEntity.ok(analysis);
+
         } catch (Exception e) {
-            log.error("❌ 분석 조회 실패: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("❌ 조회 실패: " + e.getMessage());
+            log.error("ERROR: Failed to get analysis for month {}: {}", yearMonth, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("분석 내역 조회에 실패했습니다.");
         }
     }
 
@@ -73,6 +112,19 @@ public class AnalysisAPIController {
         } catch (Exception e) {
             log.error("❌ 최신 분석 조회 실패: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("❌ 조회 실패: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/prediction")
+    public ResponseEntity<PredictionDTO> getPrediction() {
+        try {
+            String userId = getCurrentUserId();
+            log.info("INFO: Get prediction for userId={}", userId);
+            PredictionDTO prediction = aiAnalysisService.predictNextMonthSpending(userId);
+            return ResponseEntity.ok(prediction);
+        } catch (Exception e) {
+            log.error("❌ 예측 생성 실패: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(null);
         }
     }
 

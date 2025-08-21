@@ -3,7 +3,6 @@ package kopo.newproject.controller;
 import kopo.newproject.service.IBudgetService;
 import kopo.newproject.service.ISpendingService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @RestController
 @RequestMapping("/dashboardAPI")
 @RequiredArgsConstructor
@@ -28,7 +26,6 @@ public class DashBoardAPIController {
     @GetMapping("/usage-summary")
     public ResponseEntity<?> getDashboardSummary() {
         String userId = getCurrentUserId();
-        log.info("📊 대시보드 요약 데이터 요청: userId={}", userId);
 
         try {
             // 1. 카테고리별 사용 금액 (pie chart)
@@ -63,7 +60,6 @@ public class DashBoardAPIController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("대시보드 요약 데이터 조회 실패: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("대시보드 데이터 조회 실패");
         }
     }

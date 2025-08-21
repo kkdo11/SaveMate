@@ -106,6 +106,7 @@ public class SpendingService implements ISpendingService {
     }
 
     //카테고리별 월간 사용액 합산
+    @Override
     public BigDecimal calculateMonthlySpendingSum(String userId, int year, int month, String category) {
         YearMonth yearMonth = YearMonth.of(year, month);
         return spendingRepository.sumAmountByUserIdAndMonthAndCategory(userId, yearMonth, category);
@@ -136,6 +137,16 @@ public class SpendingService implements ISpendingService {
             result.put(monthKey, result.getOrDefault(monthKey, 0) + amount);
         }
         return result;
+    }
+
+    @Override
+    public Map<String, BigDecimal> getSpendingByCategory(String userId, YearMonth reportMonth) throws Exception {
+        List<SpendingEntity> spendings = getSpendings(userId, reportMonth, null);
+        Map<String, BigDecimal> spendingByCategory = new HashMap<>();
+        for (SpendingEntity spending : spendings) {
+            spendingByCategory.merge(spending.getCategory(), spending.getAmount(), BigDecimal::add);
+        }
+        return spendingByCategory;
     }
 
 

@@ -1,28 +1,23 @@
 package kopo.newproject.security;
 
-
-
 import kopo.newproject.repository.entity.jpa.UserInfoEntity;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
-@RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final UserInfoEntity user;
+    private final UserInfoEntity user; // UserInfoEntity 필드 추가
+
+    public CustomUserDetails(UserInfoEntity user) {
+        this.user = user;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 권한 설정이 없다면 빈 리스트 반환
-        return Collections.emptyList();
-    }
-
-    public String getName() {
-        return user.getName(); // UserInfoEntity에 getName() 메서드가 있어야 함
+        return new ArrayList<>(); // 권한은 일단 비워둠
     }
 
     @Override
@@ -35,24 +30,30 @@ public class CustomUserDetails implements UserDetails {
         return user.getUserId(); // 로그인에 사용할 사용자 ID
     }
 
+    // UserInfoEntity의 getName() 메서드를 사용하도록 수정
+    public String getName() {
+        return user.getName();
+    }
+
     @Override
     public boolean isAccountNonExpired() {
-        return true; // 계정 만료 여부
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true; // 계정 잠김 여부
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // 비밀번호 만료 여부
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return true; // 계정 활성화 여부
+        return true;
     }
 }
+
 

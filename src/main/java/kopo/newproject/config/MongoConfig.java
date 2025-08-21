@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 
 import java.time.YearMonth;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 
@@ -15,10 +17,12 @@ public class MongoConfig {
 
     @Bean
     public MongoCustomConversions customConversions() {
-        return new MongoCustomConversions(Arrays.asList(
-                new YearMonthReadConverter(),
-                new YearMonthWriteConverter()
-        ));
+        List<Converter<?, ?>> converters = new ArrayList<>();
+        converters.add(new YearMonthReadConverter());
+        converters.add(new YearMonthWriteConverter());
+        converters.add(new BigDecimalToDecimal128Converter());
+        converters.add(new Decimal128ToBigDecimalConverter());
+        return new MongoCustomConversions(converters);
     }
 
     public static class YearMonthReadConverter implements Converter<String, YearMonth> {

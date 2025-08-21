@@ -6,6 +6,8 @@ import kopo.newproject.repository.jpa.BudgetRepository;
 import kopo.newproject.repository.mongo.SpendingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,8 +20,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnalysisPreprocessorService {
 
+    private static final Logger log = LoggerFactory.getLogger(AnalysisPreprocessorService.class);
+
     private final SpendingRepository spendingRepo;
     private final BudgetRepository budgetRepo;
+
+
 
     public Map<String, Object> generateAnalysisInput(String userId, YearMonth yearMonth) {
         LocalDate from = yearMonth.atDay(1);

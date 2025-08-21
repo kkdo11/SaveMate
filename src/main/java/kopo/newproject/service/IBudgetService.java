@@ -20,4 +20,12 @@ public interface IBudgetService {
 
     Map<String, Integer> getTotalBudgetByMonth(String userId);
 
+    /**
+     * 최신 소비자물가지수(CPI) 상승률을 반영하여 해당 사용자의 현재 월 모든 예산을 조정합니다.
+     *
+     * @param userId 예산을 조정할 사용자의 ID
+     * @return 조정된 예산 엔티티 리스트
+     */
+    List<BudgetEntity> adjustAllBudgetsForCpi(String userId);
+
 }

@@ -6,6 +6,7 @@ import kopo.newproject.repository.entity.mongo.SpendingEntity;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 public interface ISpendingService {
 
@@ -22,5 +23,9 @@ public interface ISpendingService {
 
     Map<String, Integer> getTotalAmountGroupedByCategory(String userId);
     Map<String, Integer> getTotalSpendingByMonth(String userId);
+
+    BigDecimal calculateMonthlySpendingSum(String userId, int year, int month, String category) throws Exception;
+
+    Map<String, BigDecimal> getSpendingByCategory(String userId, YearMonth reportMonth) throws Exception;
 
 }

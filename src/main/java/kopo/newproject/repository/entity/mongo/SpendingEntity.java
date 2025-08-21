@@ -45,6 +45,16 @@ public class SpendingEntity {
     @Setter
     private YearMonth month;  // 월을 YearMonth로 저장
 
+    // Manually added getters to resolve compilation issues if Lombok fails
+    public String getCategory() {
+        return category;
+    }
 
+    public BigDecimal getAmount() {
+        return amount;
+    }
 
+    public String getDescription() {
+        return description;
+    }
 }

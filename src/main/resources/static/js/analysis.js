@@ -4,15 +4,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     document.getElementById('analysisMonth').value = `${yyyy}-${mm}`;
 
-    // 최신 분석 자동 조회
-    fetchLatestAnalysis();
+    // 디버깅: isAuthenticated 값 확인
+    console.log('isAuthenticated:', isAuthenticated);
+
+    // 비로그인 상태일 경우 버튼 및 입력 필드 비활성화 및 결과 영역 초기화
+    if (!isAuthenticated) {
+        document.getElementById('analysisMonth').disabled = true;
+        document.getElementById('analysisMonth').classList.add('opacity-50', 'cursor-not-allowed');
+
+        const analysisControls = document.getElementById('analysisControls');
+        if (analysisControls) {
+            analysisControls.querySelectorAll('button').forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+        }
+
+        // emptyState 내의 버튼도 비활성화
+        const emptyStateButton = document.querySelector('#emptyState button');
+        if (emptyStateButton) {
+            emptyStateButton.disabled = true;
+            emptyStateButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // AI 분석 결과 영역을 즉시 비우고 로그인 필요 메시지 표시
+        renderUnauthorized('analysisResult', 'AI 분석 결과를 보려면 로그인이 필요합니다.');
+
+    } else {
+        // 로그인 상태일 경우에만 최신 분석 자동 조회
+        fetchLatestAnalysis();
+    }
+
+    // Add event listener for prediction button
+    const predictionButton = document.getElementById('run-prediction-btn');
+    if (predictionButton) {
+        predictionButton.addEventListener('click', runPrediction);
+    }
 });
 
 const csrfToken = document.querySelector('meta[name="_csrf"]').content;
 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 let spendingChart = null;
 
-// 알림 표시 함수
+// 비인증 상태 UI 렌더링 함수 (재사용)
+function renderUnauthorized(elementId, message) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-10 border rounded-lg bg-gray-50">
+            <p class="font-medium">${message}</p>
+            <a href='/user/login' class='text-blue-600 hover:underline mt-2 inline-block text-sm'>로그인 페이지로 이동</a>
+        </div>
+    `;
+}
+
+// 알림 표시 함수 (기존 유지, 다른 용도로 사용될 수 있으므로)
 function showNotification(type, title, message, action = null) {
     const notificationArea = document.getElementById('notificationArea');
     const notification = document.getElementById('notification');
@@ -65,6 +111,7 @@ function showNotification(type, title, message, action = null) {
 
     notificationArea.classList.remove('hidden');
 }
+
 
 // 알림 닫기 함수
 function closeNotification() {
@@ -142,12 +189,7 @@ function fetchLatestAnalysis() {
                 showEmptyState(true);
                 return null;
             } else if (res.status === 401 || res.status === 403) {
-                showNotification(
-                    'warning',
-                    '로그인이 필요합니다',
-                    '로그인 후 이용해 주세요.',
-                    `<a href="/user/login" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">로그인하기</a>`
-                );
+                renderUnauthorized('analysisResult', 'AI 분석 결과를 보려면 로그인이 필요합니다.');
                 return null;
             } else if (!res.ok) {
                 throw new Error("서버 오류가 발생했습니다");
@@ -170,12 +212,11 @@ function fetchLatestAnalysis() {
         })
         .catch(err => {
             // 서버 오류 처리
-            showNotification(
-                'error',
-                '데이터를 불러올 수 없습니다',
-                err.message,
-                `<button onclick="fetchLatestAnalysis()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">다시 시도</button>`
-            );
+            console.error("Fetch error in fetchLatestAnalysis:", err);
+            // 401/403은 이미 위에서 처리되었으므로, 그 외의 에러만 renderUnauthorized로 표시
+            if (err.message !== 'Unauthorized') {
+                renderUnauthorized('analysisResult', '데이터를 불러올 수 없습니다. 다시 시도해주세요.');
+            }
         })
         .finally(() => toggleLoading(false));
 }
@@ -200,20 +241,23 @@ function requestAnalysis(event) {
         }
     })
         .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                renderUnauthorized('analysisResult', 'AI 분석을 요청하려면 로그인이 필요합니다.');
+                return null; // 에러 처리 후 다음 then 블록으로 넘어가지 않도록 null 반환
+            }
             if (!res.ok) throw new Error("분석 요청 실패");
             return res.json();
         })
         .then(json => {
+            if (!json) return; // 401/403 처리로 null이 넘어온 경우
             renderAnalysisResult(json);
             showToast('success', '분석 완료', '소비 분석이 완료되었습니다.');
         })
         .catch(err => {
-            showNotification(
-                'error',
-                '분석 요청 실패',
-                err.message,
-                `<button onclick="requestAnalysis(event)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">다시 시도</button>`
-            );
+            console.error("Fetch error in requestAnalysis:", err);
+            if (err.message !== 'Unauthorized') {
+                renderUnauthorized('analysisResult', '분석 요청 실패. 다시 시도해주세요.');
+            }
         })
         .finally(() => toggleLoading(false));
 }
@@ -233,6 +277,10 @@ function deleteAnalysis(event) {
         headers: { [csrfHeader]: csrfToken }
     })
         .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                renderUnauthorized('analysisResult', 'AI 분석 내역을 삭제하려면 로그인이 필요합니다.');
+                return null; // 에러 처리 후 다음 then 블록으로 넘어가지 않도록 null 반환
+            }
             if (res.status === 204) {
                 clearResult();
                 showEmptyState(true);
@@ -242,51 +290,59 @@ function deleteAnalysis(event) {
             }
         })
         .catch(err => {
-            showNotification('error', '삭제 실패', err.message);
+            console.error("Fetch error in deleteAnalysis:", err);
+            if (err.message !== 'Unauthorized') {
+                renderUnauthorized('analysisResult', '삭제 실패. 다시 시도해주세요.');
+            }
         });
 }
 
 function renderAnalysisResult(result) {
     const container = document.getElementById("analysisResult");
 
-    // 기존 내용 페이드 아웃
+    // 분석 항목 순서 및 제목, 아이콘 정의
+    const analysisItems = [
+        { key: 'summary', title: '✅ 월간 요약', color: 'green' },
+        { key: 'habit', title: '🧾 소비 습관 분석', color: 'yellow' },
+        { key: 'tip', title: '💡 절약 팁 제시', color: 'blue' },
+        { key: 'anomaly', title: '❗ 이상 지출 탐지', color: 'red' },
+        { key: 'guide', title: '📌 다음 달 행동 가이드', color: 'purple' }
+    ];
+
+    // 리스트를 담을 div 생성
+    let listHtml = '<div class="space-y-4">'
+
+    analysisItems.forEach(item => {
+        const content = result[item.key];
+        if (content) {
+            listHtml += `
+                <div class="p-4 border-l-4 border-${item.color}-500 bg-gray-50 rounded-r-lg">
+                    <h4 class="font-semibold text-gray-800 flex items-center">
+                        ${getCardIcon(item.title)} <!-- 아이콘 재활용 -->
+                        <span class="ml-2">${item.title.substring(2)}</span> <!-- 이모지 제외한 제목 -->
+                    </h4>
+                    <p class="text-gray-600 mt-2 leading-relaxed">${content}</p>
+                </div>
+            `;
+        }
+    });
+
+    listHtml += '</div>';
+
+    // 기존 내용 페이드 아웃 후 새 내용으로 교체
     container.classList.add('opacity-0');
-
     setTimeout(() => {
-        container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${renderCard("✅ 월간 요약", result.summary, "green")}
-                ${renderCard("🧾 소비 습관 분석", result.habit, "yellow")}
-                ${renderCard("💡 절약 팁 제시", result.tip, "blue")}
-                ${renderCard("❗ 이상 지출 탐지", result.anomaly, "red")}
-                ${renderCard("📌 다음 달 행동 가이드", result.guide, "purple")}
-            </div>
-        `;
-
+        container.innerHTML = listHtml;
         container.classList.remove('opacity-0');
 
+        // 차트 렌더링 (필요 시)
         if (result.categorySpending) {
-            renderSpendingChart(result.categorySpending);
+            // 이 부분은 차트를 다른 곳에 그리거나, 이 UI와 통합해야 할 수 있습니다.
+            // renderSpendingChart(result.categorySpending);
         }
     }, 300);
 }
 
-
-function renderCard(title, content, color) {
-    return `
-            <div class="border rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md">
-                <div class="bg-${color}-50 px-4 py-3 border-b border-${color}-100">
-                    <h4 class="text-${color}-700 font-medium flex items-center">
-                        ${getCardIcon(title)}
-                        <span class="ml-2">${title}</span>
-                    </h4>
-                </div>
-                <div class="p-4 bg-white">
-                    <p class="text-gray-700 leading-relaxed">${content || "내용 없음"}</p>
-                </div>
-            </div>
-        `;
-}
 
 function getCardIcon(title) {
     // 카드 타입별 아이콘 반환
@@ -378,15 +434,24 @@ function showHistory(event) {
         headers: { [csrfHeader]: csrfToken }
     })
         .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                renderUnauthorized('historyList', '분석 히스토리를 보려면 로그인이 필요합니다.');
+                document.getElementById('historyModal').classList.remove('hidden'); // 모달은 열되 내용만 변경
+                return null;
+            }
             if (!res.ok) throw new Error("히스토리 조회 실패");
             return res.json();
         })
         .then(history => {
+            if (!history) return; // 401/403 처리로 null이 넘어온 경우
             renderHistoryList(history, month);
             document.getElementById('historyModal').classList.remove('hidden');
         })
         .catch(err => {
-            showNotification('error', '히스토리 조회 실패', err.message);
+            console.error("Fetch error in showHistory:", err);
+            if (err.message !== 'Unauthorized') {
+                renderUnauthorized('historyList', '히스토리 조회 실패. 다시 시도해주세요.');
+            }
         })
         .finally(() => toggleLoading(false));
 }
@@ -447,16 +512,24 @@ function viewAnalysis(analysisId) {
         headers: { [csrfHeader]: csrfToken }
     })
         .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                renderUnauthorized('analysisResult', '분석 결과를 보려면 로그인이 필요합니다.');
+                return null;
+            }
             if (!res.ok) throw new Error("분석 결과 조회 실패");
             return res.json();
         })
         .then(analysis => {
+            if (!analysis) return; // 401/403 처리로 null이 넘어온 경우
             const result = JSON.parse(analysis.result);
             showEmptyState(false);
             renderAnalysisResult(result);
         })
         .catch(err => {
-            showNotification('error', '분석 결과 조회 실패', err.message);
+            console.error("Fetch error in viewAnalysis:", err);
+            if (err.message !== 'Unauthorized') {
+                renderUnauthorized('analysisResult', '분석 결과 조회 실패. 다시 시도해주세요.');
+            }
         })
         .finally(() => toggleLoading(false));
 }
@@ -470,15 +543,24 @@ function compareAnalysis(analysisId1, analysisId2) {
         headers: { [csrfHeader]: csrfToken }
     })
         .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                renderUnauthorized('compareResult', '분석 결과를 비교하려면 로그인이 필요합니다.');
+                document.getElementById('compareModal').classList.remove('hidden'); // 모달은 열되 내용만 변경
+                return null;
+            }
             if (!res.ok) throw new Error("분석 결과 비교 실패");
             return res.json();
         })
         .then(comparison => {
+            if (!comparison) return; // 401/403 처리로 null이 넘어온 경우
             renderComparisonResult(comparison);
             document.getElementById('compareModal').classList.remove('hidden');
         })
         .catch(err => {
-            showNotification('error', '분석 결과 비교 실패', err.message);
+            console.error("Fetch error in compareAnalysis:", err);
+            if (err.message !== 'Unauthorized') {
+                renderUnauthorized('compareResult', '분석 결과 비교 실패. 다시 시도해주세요.');
+            }
         })
         .finally(() => toggleLoading(false));
 }
@@ -568,3 +650,301 @@ window.addEventListener('click', function(event) {
         closeCompareModal();
     }
 });
+
+// --- 공공데이터 비교 기능 추가 ---
+
+let comparisonChart = null;
+
+/**
+ * "공공데이터와 비교" 버튼 클릭 시 실행되는 메인 함수
+ */
+async function requestPublicDataComparison(event) {
+    event.preventDefault();
+    if (!isAuthenticated) {
+        showToast('error', '로그인 필요', '또래와 소비를 비교하려면 로그인이 필요합니다.');
+        return;
+    }
+
+    const month = document.getElementById('analysisMonth').value;
+    if (!month) {
+        showToast('error', '월을 선택하세요', '비교할 월을 선택해주세요.');
+        return;
+    }
+
+    toggleLoading(true);
+    document.getElementById('comparisonResult').classList.add('hidden');
+
+    try {
+        // 1. 사용자 정보 가져오기 (성별, 생년월일)
+        const userInfo = await getUserInfo();
+        if (!userInfo || !userInfo.gender || !userInfo.birthDate) {
+            showToast('error', '사용자 정보 부족', '프로필에 성별과 생년월일 정보가 필요합니다.');
+            return;
+        }
+        const ageGroup = getAgeGroup(userInfo.birthDate);
+        const gender = userInfo.gender;
+
+        // 2. 최신 원본 소비 데이터와 집계된 평균 데이터를 동시에 요청
+        const results = await Promise.allSettled([
+            fetch(`/api/analysis/${month}/raw-spending`, { headers: { [csrfHeader]: csrfToken } }), // 항상 최신 원본 데이터 조회
+            fetch(`/api/aggregated-spending/compare?gender=${gender}&ageGroup=${ageGroup}`, { headers: { [csrfHeader]: csrfToken } })
+        ]);
+
+        const userSpendingResponse = results[0];
+        const aggregatedDataResponse = results[1];
+
+        // 3. 사용자 소비 데이터 처리
+        let userSpendingData = null;
+        if (userSpendingResponse.status === 'fulfilled' && userSpendingResponse.value.ok) {
+            userSpendingData = await userSpendingResponse.value.json();
+        } else {
+            showToast('info', '소비 데이터 부족', `해당 월의 소비 데이터가 없어 비교할 수 없습니다.`);
+            return;
+        }
+
+        if (!userSpendingData || Object.keys(userSpendingData).length === 0) {
+            renderNoComparisonData(); // 새로운 함수 호출
+            return;
+        }
+
+        // 4. 집계 데이터 처리
+        let aggregatedData = null;
+        if (aggregatedDataResponse.status === 'fulfilled' && aggregatedDataResponse.value.ok) {
+            aggregatedData = await aggregatedDataResponse.value.json();
+        } else {
+            showToast('info', '비교 데이터 없음', '아직 또래 평균 소비 데이터가 없어요. 내 소비 내역만 표시됩니다.');
+        }
+
+        // 5. 데이터 매핑 및 결합
+        const combinedData = mapAndCombineData(userSpendingData, aggregatedData);
+
+        // 6. 차트 렌더링
+        renderComparisonChart(combinedData);
+        document.getElementById('comparisonResult').classList.remove('hidden');
+        showToast('success', '비교 완료', '또래 평균 소비 내역 비교가 완료되었습니다.');
+
+    } catch (error) {
+        console.error("Error during aggregated data comparison:", error);
+        showToast('error', '오류 발생', '데이터를 비교하는 중 오류가 발생했습니다.');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+/**
+ * (임시) 사용자 정보를 가져오는 함수.
+ * TODO: 실제로는 서버 API를 호출하여 사용자 정보를 가져와야 합니다.
+ */
+async function getUserInfo() {
+    // 이 부분은 실제 API 엔드포인트로 교체해야 합니다.
+    // 예: return fetch('/api/user/info').then(res => res.json());
+    return Promise.resolve({
+        name: "김도원",
+        birthDate: "1998-03-12", // 예시 생년월일
+        gender: "M" // 예시 성별 (M: 남성, F: 여성)
+    });
+}
+
+/**
+ * 생년월일을 KOSIS 연령대 코드로 변환하는 함수
+ */
+function getAgeGroup(birthDate) {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+
+    if (age < 20) return '10대';
+    if (age < 30) return '20대';
+    if (age < 40) return '30대';
+    if (age < 50) return '40대';
+    if (age < 60) return '50대';
+    if (age < 70) return '60대';
+    return '70대 이상';
+}
+
+/**
+ * 사용자 소비 데이터와 집계된 평균 데이터를 매핑하고 결합하는 함수
+ */
+function mapAndCombineData(userSpending, aggregatedData) {
+    // 사용자 소비 데이터가 없으면 빈 객체로 초기화
+    const currentUserSpending = userSpending || {};
+
+    // 모든 카테고리 목록을 미리 추출 (사용자 + 또래 평균)
+    const allCategories = new Set([
+        ...Object.keys(currentUserSpending),
+        ...(aggregatedData ? Object.keys(aggregatedData.categoryAverageSpending) : [])
+    ]);
+
+    const combined = {};
+
+    allCategories.forEach(category => {
+        const userAmount = currentUserSpending[category] || 0;
+        const publicAmount = (aggregatedData && aggregatedData.categoryAverageSpending && aggregatedData.categoryAverageSpending[category])
+            ? parseFloat(aggregatedData.categoryAverageSpending[category])
+            : 0;
+
+        // 둘 중 하나라도 데이터가 있는 경우에만 결과에 포함
+        if (userAmount > 0 || publicAmount > 0) {
+            combined[category] = {
+                user: userAmount,
+                public: publicAmount
+            };
+        }
+    });
+
+    console.log("Combined Chart Data:", combined);
+    return combined;
+}
+
+/**
+ * 비교 차트를 렌더링하는 함수
+ */
+function renderComparisonChart(data) {
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    const labels = Object.keys(data);
+    const userData = labels.map(label => data[label].user);
+    const publicData = labels.map(label => data[label].public);
+
+    if (comparisonChart) {
+        comparisonChart.destroy();
+    }
+
+    comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '내 소비 (원)',
+                    data: userData,
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)', // Indigo
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: '또래 평균 소비 (원)',
+                    data: publicData,
+                    backgroundColor: 'rgba(13, 148, 136, 0.8)', // Teal
+                    borderColor: 'rgba(13, 148, 136, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            // 로그 스케일에서는 context.raw를 사용해야 원래 값을 표시할 수 있음
+                            if (context.raw !== null) {
+                                label += new Intl.NumberFormat('ko-KR').format(context.raw) + '원';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'logarithmic', // 값의 차이가 클 때 효과적인 로그 스케일 사용
+                    min: 1, // 로그 스케일은 0이 될 수 없으므로 최소값을 1로 설정
+                    ticks: {
+                        callback: function(value, index, ticks) {
+                            // 1, 10, 100, 1000 등 10의 거듭제곱 값만 표시하여 가독성 향상
+                            const log10 = Math.log10(value);
+                            if (log10 === Math.floor(log10)) {
+                                return new Intl.NumberFormat('ko-KR', { notation: 'compact' }).format(value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 비교할 소비 데이터가 없을 때 표시하는 UI
+ */
+function renderNoComparisonData() {
+    const container = document.getElementById('comparisonResult');
+    if (!container) return;
+
+    if (comparisonChart) {
+        comparisonChart.destroy();
+        comparisonChart = null;
+    }
+
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-10 border rounded-lg bg-gray-50">
+            <p class="font-medium mb-4">해당 월의 소비 데이터가 없어 또래와 비교할 수 없습니다.</p>
+            <a href='/spending/page' class='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center'>
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                <span>소비 내역 추가하기</span>
+            </a>
+        </div>
+    `;
+    container.classList.remove('hidden');
+}
+
+async function runPrediction(event) {
+    event.preventDefault();
+    const resultDiv = document.getElementById('prediction-result');
+    const loadingDiv = document.getElementById('prediction-loading');
+    const button = document.getElementById('run-prediction-btn');
+
+    button.style.display = 'none';
+    loadingDiv.style.display = 'flex';
+
+    try {
+        const response = await fetch('/api/analysis/prediction', {
+            method: 'GET',
+            headers: { [csrfHeader]: csrfToken }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const prediction = await response.json();
+
+        if (prediction.message && !prediction.totalPredictedAmount) {
+            resultDiv.innerHTML = `<p class="text-gray-500">${prediction.message}</p>`;
+            return;
+        }
+
+        let categoryHtml = '<ul class="list-disc list-inside text-left max-w-md mx-auto mt-4 space-y-1">';
+        for (const [category, amount] of Object.entries(prediction.categoryPredictedAmounts)) {
+            categoryHtml += `<li><span class="font-semibold">${category}:</span> ${amount.toLocaleString('ko-KR')}원</li>`;
+        }
+        categoryHtml += '</ul>';
+
+        resultDiv.innerHTML = `
+            <div class="p-4 rounded-lg bg-indigo-50">
+                <p class="text-gray-600">다음 달 예상 소비액</p>
+                <p class="text-3xl font-bold text-indigo-600 my-2">${prediction.totalPredictedAmount.toLocaleString('ko-KR')}원</p>
+                <hr class="my-3">
+                <p class="text-sm text-gray-500 mb-2">카테고리별 예상 지출</p>
+                ${categoryHtml}
+            </div>
+        `;
+
+    } catch (error) {
+        resultDiv.innerHTML = `<p class="text-red-500 font-semibold p-4 bg-red-50 rounded-lg">⚠️ 예측 실패: ${error.message}</p>`;
+    } finally {
+        loadingDiv.style.display = 'none';
+    }
+}

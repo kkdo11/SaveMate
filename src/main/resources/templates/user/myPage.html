@@ -4,40 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>마이페이지 - SAVEMATE</title>
+
     <script src="/js/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
     <script>
-    // ✅ CSRF 설정 자동 포함 fetch 래퍼
-    function csrfFetch(url, options = {}) {
-        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute("content");
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute("content");
+        function csrfFetch(url, options = {}) {
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute("content");
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute("content");
 
-        const defaultHeaders = {
-            'Content-Type': 'application/json',
-            [csrfHeader]: csrfToken
-        };
+            const defaultHeaders = {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            };
 
-        options.headers = { ...defaultHeaders, ...(options.headers || {}) };
+            options.headers = { ...defaultHeaders, ...(options.headers || {}) };
 
-        return fetch(url, options);
-    }
+            return fetch(url, options);
+        }
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-<!-- ✅ Header -->
 <div th:replace="~{navbar :: navbar}"></div>
 
-<!-- 본문 -->
 <div class="flex flex-col lg:flex-row min-h-screen">
-    <!-- 마이페이지 본문 -->
     <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12 bg-white">
         <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
             <h2 class="text-3xl font-bold mb-6 text-gray-800 text-center">마이페이지</h2>
 
-            <!-- 사용자 정보 카드 -->
             <div class="space-y-3 mb-8">
                 <div class="flex justify-between">
                     <span class="font-semibold text-gray-700">아이디:</span>
@@ -51,9 +49,16 @@
                     <span class="font-semibold text-gray-700">이메일:</span>
                     <span th:text="${userInfo.email}" class="text-gray-800">email@example.com</span>
                 </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold text-gray-700">성별:</span>
+                    <span th:text="${userInfo.gender}" class="text-gray-800">성별</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold text-gray-700">생년월일:</span>
+                    <span th:text="${userInfo.birthDate}" class="text-gray-800">생년월일</span>
+                </div>
             </div>
 
-            <!-- 🔐 비밀번호 변경 폼 -->
             <h3 class="text-xl font-semibold text-gray-800 mb-4">비밀번호 변경</h3>
             <form th:action="@{/user/changePassword}" method="post" class="space-y-5">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
@@ -78,13 +83,37 @@
                 </button>
             </form>
 
-            <!-- 메시지 출력 -->
             <div class="mt-4 text-center">
                 <span th:if="${errorMessage}" th:text="${errorMessage}"
                       class="text-red-500 text-sm"></span>
                 <span th:if="${successMessage}" th:text="${successMessage}"
                       class="text-green-600 text-sm"></span>
             </div>
+
+            <!-- ✅ 소비 알림 받기 스위치 -->
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">소비 알림 받기</h3>
+            <div class="flex items-center justify-center bg-gray-50 p-4 rounded-lg shadow-sm">
+                <span class="font-semibold text-gray-700 mr-4">알림 활성화</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input h-6 w-11 appearance-none bg-gray-300 checked:bg-purple-600 focus:outline-none rounded-full relative cursor-pointer transition-colors duration-200 ease-in-out" 
+                           type="checkbox" role="switch" id="globalAlertToggle"
+                           th:checked="${userInfo.globalAlertEnabled}">
+                    <label class="form-check-label inline-block text-gray-700 ml-3" for="globalAlertToggle"></label>
+                </div>
+            </div>
+
+            <!-- ✅ 물가 반영 예산 자동 조정 스위치 -->
+            <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">물가 반영 예산 자동 조정</h3>
+            <div class="flex items-center justify-center bg-gray-50 p-4 rounded-lg shadow-sm">
+                <span class="font-semibold text-gray-700 mr-4">자동 조정 활성화</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input h-6 w-11 appearance-none bg-gray-300 checked:bg-purple-600 focus:outline-none rounded-full relative cursor-pointer transition-colors duration-200 ease-in-out" 
+                           type="checkbox" role="switch" id="autoBudgetAdjustmentToggle"
+                           th:checked="${userInfo.autoBudgetAdjustmentEnabled}">
+                    <label class="form-check-label inline-block text-gray-700 ml-3" for="autoBudgetAdjustmentToggle"></label>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -93,6 +122,76 @@
         <img src="/images/logo1.png" alt="Savemate Logo" class="w-72 h-auto rounded-lg shadow-2xl" />
     </div>
 </div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+
+// ✅ API 호출 함수 (기존 csrfFetch 사용)
+async function updateGlobalAlertSetting(enabled) {
+    const url = `/user/global-alert-setting?enabled=${enabled}`;
+    try {
+        const response = await csrfFetch(url, {
+            method: 'PUT',
+        });
+
+        if (response.ok) {
+            console.log(`전역 알림 설정이 ${enabled}로 성공적으로 업데이트되었습니다.`);
+            // 사용자에게 성공 메시지 표시
+            // alert('전역 알림 설정이 저장되었습니다!');
+        } else {
+            const errorText = await response.text();
+            console.error(`전역 알림 설정 업데이트 실패: ${errorText}`);
+            alert('전역 알림 설정 저장 실패: ' + errorText);
+        }
+    } catch (error) {
+        console.error('네트워크 오류:', error);
+        alert('네트워크 오류가 발생했습니다.');
+    }
+}
+
+// ✅ 자동 예산 조정 설정 업데이트 함수
+async function updateAutoBudgetAdjustmentSetting(enabled) {
+    const url = `/user/auto-budget-adjustment-setting?enabled=${enabled}`;
+    try {
+        const response = await csrfFetch(url, {
+            method: 'PUT',
+        });
+
+        if (response.ok) {
+            console.log(`자동 예산 조정 설정이 ${enabled}로 성공적으로 업데이트되었습니다.`);
+            // 사용자에게 성공 메시지 표시
+            // alert('자동 예산 조정 설정이 저장되었습니다!');
+        } else {
+            const errorText = await response.text();
+            console.error(`자동 예산 조정 설정 업데이트 실패: ${errorText}`);
+            alert('자동 예산 조정 설정 저장 실패: ' + errorText);
+        }
+    } catch (error) {
+        console.error('네트워크 오류:', error);
+        alert('네트워크 오류가 발생했습니다.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const globalAlertToggle = document.getElementById('globalAlertToggle');
+    if (globalAlertToggle) {
+        globalAlertToggle.addEventListener('change', () => {
+            const enabled = globalAlertToggle.checked;
+            updateGlobalAlertSetting(enabled);
+        });
+    }
+
+    const autoBudgetAdjustmentToggle = document.getElementById('autoBudgetAdjustmentToggle');
+    if (autoBudgetAdjustmentToggle) {
+        autoBudgetAdjustmentToggle.addEventListener('change', () => {
+            const enabled = autoBudgetAdjustmentToggle.checked;
+            updateAutoBudgetAdjustmentSetting(enabled);
+        });
+    }
+});
+
+/*]]>*/
+</script>
 
 </body>
 </html>

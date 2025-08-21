@@ -10,27 +10,24 @@ async function csrfFetch(url, options = {}) {
         [csrfHeader]: csrfToken,
     };
 
-    try {
-        const res = await fetch(url, options);
+    const res = await fetch(url, options);
 
-        // 🧊 401이면 조용히 무시
-        if (res.status === 401) {
-            return null;
-        }
-
-        const contentType = res.headers.get("content-type") || "";
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-
-        if (contentType.includes("application/json")) {
-            return await res.json();
-        }
-
-        return null; // 📦 JSON 아닌 경우도 무시
-    } catch (err) {
-        // ❌ 서버 에러 등만 보고 싶으면 주석 제거
-        // console.error("요청 실패:", err);
-        return null; // 🔕 모든 에러도 조용히 처리
+    if (res.status === 401) {
+        const error = new Error('Unauthorized');
+        error.status = 401;
+        throw error;
     }
+
+    if (!res.ok) {
+        throw new Error(`${res.status} ${res.statusText}`);
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+        return await res.json();
+    }
+
+    return null;
 }
 
 
@@ -55,18 +52,37 @@ function applyFilters() {
 
 async function getSpendings() {
     document.getElementById('loading').classList.remove('hidden');
+    const listContainer = document.getElementById('spendingList');
+    listContainer.innerHTML = ''; // Start by clearing the list
+
     const url = `${apiUrl}?month=${filterMonth}&category=${filterCategory}`;
 
     try {
         const data = await csrfFetch(url);
         if (data) {
             renderSpendings(data);
+        }
+    } catch (err) {
+        if (err.status === 401) {
+            renderUnauthorized('spendingList', '소비 내역을 보려면 로그인이 필요합니다.');
         } else {
-            // ❌ 아무 것도 안함 (침묵)
+            console.error("Failed to fetch spendings:", err);
+            listContainer.innerHTML = '<p class="text-center text-red-500">데이터를 불러오는 중 오류가 발생했습니다.</p>';
         }
     } finally {
         document.getElementById('loading').classList.add('hidden');
     }
+}
+
+function renderUnauthorized(elementId, message) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-10 border rounded-lg bg-gray-50">
+            <p class="font-medium">${message}</p>
+            <a href='/user/login' class='text-blue-600 hover:underline mt-2 inline-block text-sm'>로그인 페이지로 이동</a>
+        </div>
+    `;
 }
 
 

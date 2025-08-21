@@ -5,7 +5,6 @@ import kopo.newproject.dto.MailDTO;
 import kopo.newproject.service.IMailService;
 import kopo.newproject.util.CmmUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Random;
 
-@Slf4j
 @RequiredArgsConstructor
 @Service("MailService")
 public class MailService implements IMailService {
@@ -25,7 +23,6 @@ public class MailService implements IMailService {
 
     @Override
     public int doSendMail(MailDTO mailDTO) {
-        log.info("doSendMail start", this.getClass().getName());
 
         int res = 1;
         if (mailDTO == null) {
@@ -35,11 +32,6 @@ public class MailService implements IMailService {
         String toMail = CmmUtil.nvl(mailDTO.getToMail());
         String title = CmmUtil.nvl(mailDTO.getTitle());
         String contents = CmmUtil.nvl(mailDTO.getContents());
-
-        log.info("toMail:{}", toMail);
-        log.info("title:{}", title);
-        log.info("contents:{}", contents);
-        log.info("Sending mail : {}", mailDTO);
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -53,10 +45,8 @@ public class MailService implements IMailService {
             mailSender.send(mimeMessage);
         } catch (Exception e) {
             res = 0;
-            log.error("doSendMail Exception in {}: {}", this.getClass().getName(), e.getMessage(), e);
         }
 
-        log.info("doSendMail end", this.getClass().getName());
         return res;
     }
 

@@ -2,31 +2,41 @@ package kopo.newproject.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kopo.newproject.dto.PredictionDTO;
 import kopo.newproject.repository.entity.mongo.AIAnalysisEntity;
+import kopo.newproject.repository.entity.mongo.SpendingEntity;
 import kopo.newproject.repository.mongo.AIAnalysisRepository;
-
 import kopo.newproject.service.IAIAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AIAnalysisService implements IAIAnalysisService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final MongoTemplate mongoTemplate;
     private final AIAnalysisRepository aiAnalysisRepository;
     private final AnalysisPreprocessorService preprocessorService;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${openai.api.url}")
     private String openAiUrl;
@@ -34,17 +44,88 @@ public class AIAnalysisService implements IAIAnalysisService {
     @Value("${openai.api.key}")
     private String openAiKey;
 
+    // Helper class for aggregation result mapping
+    public static class CategoryAverage {
+        private String category;
+        private BigDecimal averageAmount;
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+        public BigDecimal getAverageAmount() { return averageAmount; }
+        public void setAverageAmount(BigDecimal averageAmount) { this.averageAmount = averageAmount; }
+    }
+
     @Override
-    public String analyzeUserSpending(String userId, YearMonth yearMonth, Map<String, Object> preprocessedData) {
+    public PredictionDTO predictNextMonthSpending(String userId) {
+        log.info("Starting next month spending prediction for userId: {}", userId);
+
+        LocalDate today = LocalDate.now();
+        LocalDate threeMonthsAgo = today.minusMonths(3).withDayOfMonth(1);
+        LocalDate lastDayOfLastMonth = today.withDayOfMonth(1).minusDays(1);
+
+        // 1. Match documents for the user within the last 3 full months
+        MatchOperation matchOperation = Aggregation.match(
+                Criteria.where("userId").is(userId)
+                        .and("date").gte(threeMonthsAgo).lte(lastDayOfLastMonth) // Corrected field name to "date"
+        );
+
+        // 2. Project to create a yearMonth string field before grouping
+        ProjectionOperation projectToCreateYearMonth = Aggregation.project("amount", "category")
+                .and(DateOperators.DateToString.dateOf("date").toString("%Y-%m")).as("yearMonth"); // Corrected field name to "date"
+
+        // 3. Group by the new yearMonth and category
+        GroupOperation groupByMonthAndCategory = Aggregation.group("yearMonth", "category")
+                .sum("amount").as("monthlyCategoryTotal");
+
+        // 4. Group again by just the category from the previous group's _id
+        GroupOperation groupByCategoryAndAverage = Aggregation.group("_id.category")
+                .avg("monthlyCategoryTotal").as("averageAmount");
+
+        // 5. Project the final fields to the shape of CategoryAverage class
+        ProjectionOperation projectToFinalShape = Aggregation.project("averageAmount").and("_id").as("category");
+
+        // 6. Build and run the aggregation pipeline
+        Aggregation aggregation = Aggregation.newAggregation(
+                matchOperation,
+                projectToCreateYearMonth,
+                groupByMonthAndCategory,
+                groupByCategoryAndAverage,
+                projectToFinalShape
+        );
+
+        AggregationResults<CategoryAverage> results = mongoTemplate.aggregate(aggregation, SpendingEntity.class, CategoryAverage.class);
+        List<CategoryAverage> categoryAverages = results.getMappedResults();
+
+        if (categoryAverages.isEmpty()) {
+            return PredictionDTO.builder().message("최근 3개월간의 지출 내역이 부족하여 예측할 수 없습니다.").build();
+        }
+
+        Map<String, BigDecimal> categoryPredictedAmounts = new HashMap<>();
+        BigDecimal totalPredictedAmount = BigDecimal.ZERO;
+
+        for (CategoryAverage avg : categoryAverages) {
+            BigDecimal roundedAmount = avg.getAverageAmount().setScale(0, RoundingMode.HALF_UP);
+            categoryPredictedAmounts.put(avg.getCategory(), roundedAmount);
+            totalPredictedAmount = totalPredictedAmount.add(roundedAmount);
+        }
+
+        log.info("Prediction completed for userId: {}", userId);
+        return PredictionDTO.builder()
+                .totalPredictedAmount(totalPredictedAmount)
+                .categoryPredictedAmounts(categoryPredictedAmounts)
+                .message("다음 달 소비 예측이 완료되었습니다.")
+                .build();
+    }
+
+    @Override
+    public String analyze(String userId, String yearMonthStr) {
+        YearMonth yearMonth = YearMonth.parse(yearMonthStr);
+        Map<String, Object> data = preprocessorService.generateAnalysisInput(userId, yearMonth);
+        return analyzeUserSpending(userId, yearMonth, data);
+    }
+
+    private String analyzeUserSpending(String userId, YearMonth yearMonth, Map<String, Object> preprocessedData) {
         try {
             String requestJson = objectMapper.writeValueAsString(preprocessedData);
-
-            // 버전 계산: 해당 월의 기존 분석 개수 + 1
-            int version = 1;
-            List<AIAnalysisEntity> existing = aiAnalysisRepository.findByUserIdAndMonthOrderByCreatedAtDesc(userId, yearMonth.toString());
-            if (existing != null && !existing.isEmpty()) {
-                version = existing.get(0).getVersion() + 1;
-            }
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -53,123 +134,62 @@ public class AIAnalysisService implements IAIAnalysisService {
             Map<String, Object> body = Map.of(
                     "model", "gpt-4",
                     "messages", new Object[]{
-                            Map.of("role", "system", "content", "당신은 소비 분석 AI입니다."),
+                            Map.of("role", "system", "content", "You are a financial analysis AI."),
                             Map.of("role", "user", "content", generatePrompt(preprocessedData))
-                    },
-                    "temperature", 0.7
+                    }
             );
 
             HttpEntity<?> entity = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = restTemplate.exchange(openAiUrl, HttpMethod.POST, entity, String.class);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    openAiUrl,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-            );
-
-            // 🧠 GPT 응답 content 추출
-            String content = ((Map)((Map)((List<?>) response.getBody().get("choices")).get(0)).get("message")).get("content").toString();
-
-            // 🧼 JSON 블록만 추출
+            String content = response.getBody();
             int start = content.indexOf("{");
             int end = content.lastIndexOf("}");
-            if (start == -1 || end == -1 || start >= end) {
-                throw new IllegalArgumentException("GPT 응답에서 JSON 블럭을 찾을 수 없습니다.");
-            }
-
             String cleanJson = content.substring(start, end + 1);
 
-            // ✅ JSON 파싱
             Map<String, String> parsed = objectMapper.readValue(cleanJson, new TypeReference<>() {});
 
-            // 📝 DB 저장
             AIAnalysisEntity analysis = AIAnalysisEntity.builder()
                     .userId(userId)
                     .month(yearMonth.toString())
                     .requestData(requestJson)
-                    .result(objectMapper.writeValueAsString(parsed)) // JSON 형태로 저장
+                    .result(objectMapper.writeValueAsString(parsed))
                     .createdAt(LocalDateTime.now())
-                    .version(version)
+                    .version(1) // Simplified versioning
                     .build();
-
             aiAnalysisRepository.save(analysis);
 
-            // 월별 최대 5개 제한: 5개 이상이면 가장 오래된 것 삭제
-            if (existing != null && existing.size() >= 5) {
-                AIAnalysisEntity oldest = existing.get(existing.size() - 1); // 내림차순 정렬이므로 마지막이 가장 오래됨
-                aiAnalysisRepository.deleteById(oldest.getId());
-            }
-
-            // 🔁 JSON 문자열 반환
             return objectMapper.writeValueAsString(parsed);
-
         } catch (Exception e) {
-            log.error("GPT 요청 실패", e);
-            return "❌ GPT 분석 실패: " + e.getMessage();
+            log.error("Error during GPT analysis: {}", e.getMessage(), e);
+            throw new RuntimeException("GPT 분석 실패: " + e.getMessage());
         }
     }
-
 
     private String generatePrompt(Map<String, Object> data) {
-        return """
-당신은 사용자의 소비 데이터를 분석하는 전문 금융 분석 AI입니다.
-목표는 소비 습관을 평가하고 절약을 위한 행동 지침을 제공하는 것입니다.
+        return String.format("""
+Analyze the following user spending data and provide insights. The response must be in JSON format.
 
-❗ 반드시 아래 조건을 따르세요:
-- 결과는 오직 **JSON 형식**으로만 반환하세요 (마크다운, 코드블럭, 부가 설명 포함 금지).
-- 키 이름은 영문 (summary, habit, tip, anomaly, guide) 으로 고정합니다.
-- 각 키의 값은 **6~7 문장으로 구체적인 조언과 함께** 작성하세요.
-- 문장은 한국어로 작성하고, **공손체/설명체로 통일**하세요.
-
-💾 사용자 데이터:
+User Data:
 %s
 
-📐 JSON 응답 형식과 작성 가이드:
-
+JSON Response Format:
 {
-  "summary": "이 달의 예산과 총 소비 금액을 요약하고, 초과/잔여 예산이 있는 카테고리를 서술합니다.",
-  "habit": "소비 습관에서 눈에 띄는 비율, 자주 지출된 항목, 반복적인 패턴 등을 분석합니다.",
-  "tip": "절약을 위한 현실적인 팁 2가지 이상 제시 (구독 취소, 할인 활용 등).",
-  "anomaly": "예산 초과 또는 특이 지출(비정상적 금액/날짜 등)을 식별하고 간단한 원인을 설명합니다.",
-  "guide": "다음 달에 유의해야 할 행동 지침 및 소비 습관 개선 전략을 제안합니다."
+  "summary": "Monthly summary...",
+  "habit": "Spending habit analysis...",
+  "tip": "Savings tips...",
+  "anomaly": "Anomaly detection...",
+  "guide": "Next month's guide..."
 }
-
-
-
-⚠️ 반드시 위 형식을 그대로 따르세요. 추가 설명, 제목, 마크다운, 주석 없이 JSON 그 자체만 출력하세요.
-""".formatted(data.toString());
-    }
-
-
-
-
-
-    @Override
-    public String analyze(String userId, String yearMonthStr) {
-        YearMonth yearMonth = YearMonth.parse(yearMonthStr);
-        Map<String, Object> data = preprocessorService.generateAnalysisInput(userId, yearMonth);
-
-        // 하루 3회 제한 로직 추가
-        java.time.LocalDate today = java.time.LocalDate.now();
-        java.time.LocalDateTime startOfDay = today.atStartOfDay();
-        java.time.LocalDateTime endOfDay = today.atTime(23, 59, 59);
-        long todayCount = aiAnalysisRepository.countByUserIdAndMonthAndCreatedAtBetween(
-            userId,
-            yearMonth.toString(),
-            java.sql.Timestamp.valueOf(startOfDay),
-            java.sql.Timestamp.valueOf(endOfDay)
-        );
-        if (todayCount >= 3) {
-            throw new IllegalStateException("하루에 최대 3번만 분석할 수 있습니다");
-        }
-
-        return analyzeUserSpending(userId, yearMonth, data);
+""", data.toString());
     }
 
     @Override
-    public List<AIAnalysisEntity> getAnalysisByMonth(String userId, String yearMonth) {
-        return aiAnalysisRepository.findByUserIdAndMonth(userId, yearMonth);
+    public AIAnalysisEntity getAnalysisByMonth(String userId, String yearMonth) {
+        return aiAnalysisRepository.findByUserIdAndMonthOrderByCreatedAtDesc(userId, yearMonth)
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -179,19 +199,16 @@ public class AIAnalysisService implements IAIAnalysisService {
 
     @Override
     public AIAnalysisEntity getLatestAnalysis(String userId) {
-        // 최신 생성일 기준으로 정렬하여 가장 최근 분석 1건 반환
         return aiAnalysisRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
     }
 
     @Override
     public List<AIAnalysisEntity> getAnalysisHistory(String userId, String yearMonth) {
-        // 해당 월의 모든 분석(버전) 내역을 생성일 내림차순으로 반환
         return aiAnalysisRepository.findByUserIdAndMonthOrderByCreatedAtDesc(userId, yearMonth);
     }
 
     @Override
     public AIAnalysisEntity getAnalysisById(String userId, String analysisId) {
-        // 사용자 소유의 특정 분석 결과 반환
         return aiAnalysisRepository.findByIdAndUserId(analysisId, userId).orElse(null);
     }
 
@@ -199,25 +216,17 @@ public class AIAnalysisService implements IAIAnalysisService {
     public Map<String, Object> compareAnalysis(String userId, String analysisId1, String analysisId2) {
         AIAnalysisEntity a1 = getAnalysisById(userId, analysisId1);
         AIAnalysisEntity a2 = getAnalysisById(userId, analysisId2);
-        if (a1 == null || a2 == null) return Map.of("error", "분석 결과를 찾을 수 없습니다");
+        if (a1 == null || a2 == null) return Map.of("error", "Analysis not found");
         try {
-            Map<String, String> r1 = objectMapper.readValue(a1.getResult(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
-            Map<String, String> r2 = objectMapper.readValue(a2.getResult(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
-            Map<String, Object> diff = new java.util.HashMap<>();
+            Map<String, String> r1 = objectMapper.readValue(a1.getResult(), new TypeReference<>() {});
+            Map<String, String> r2 = objectMapper.readValue(a2.getResult(), new TypeReference<>() {});
+            Map<String, Object> diff = new HashMap<>();
             for (String key : r1.keySet()) {
-                String v1 = r1.get(key);
-                String v2 = r2.get(key);
-                if (!java.util.Objects.equals(v1, v2)) {
-                    diff.put(key, Map.of("before", v2, "after", v1));
+                if (!Objects.equals(r1.get(key), r2.get(key))) {
+                    diff.put(key, Map.of("before", r2.get(key), "after", r1.get(key)));
                 }
             }
-            return Map.of(
-                "version1", a1.getVersion(),
-                "version2", a2.getVersion(),
-                "createdAt1", a1.getCreatedAt(),
-                "createdAt2", a2.getCreatedAt(),
-                "differences", diff
-            );
+            return Map.of("differences", diff);
         } catch (Exception e) {
             return Map.of("error", e.getMessage());
         }

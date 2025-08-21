@@ -8,13 +8,13 @@ import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "USER_INFO")
 @DynamicInsert
 @DynamicUpdate
 @Builder
-@Cacheable
 @Entity
 public class UserInfoEntity {
 
@@ -37,6 +37,34 @@ public class UserInfoEntity {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "global_alert_enabled", columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private Boolean globalAlertEnabled; // 전역 알림 활성화 여부
+
+    @Column(name = "auto_budget_adjustment_enabled", columnDefinition = "BOOLEAN DEFAULT FALSE", nullable = false)
+    private Boolean autoBudgetAdjustmentEnabled; // 물가 반영 예산 자동 조정 활성화 여부
+
+    @Column(name = "gender", length = 10)
+    private String gender; // 성별 (M: 남성, F: 여성)
+
+    @Column(name = "birth_date", length = 10)
+    private String birthDate; // 생년월일 (YYYY-MM-DD)
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public String getBirthDate() {
+        return birthDate;
+    }
+
+    public Boolean getAutoBudgetAdjustmentEnabled() {
+        return autoBudgetAdjustmentEnabled;
+    }
 
     // 비밀번호 변경 메서드 (setter 대체)
     public void changePassword(String newPassword) {

@@ -1,5 +1,43 @@
 const goalApiUrl = '/goalAPI';
 
+// CSRF 토큰을 포함한 fetch 래퍼 함수
+async function csrfFetch(url, options = {}) {
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    options.headers = {
+        ...options.headers,
+        [csrfHeader]: csrfToken,
+        'Content-Type': 'application/json'
+    };
+
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        const error = new Error('Unauthorized');
+        error.status = 401;
+        throw error;
+    }
+
+    if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+    }
+
+    return response;
+}
+
+// 비인증 상태 UI 렌더링 함수 (재사용)
+function renderUnauthorized(elementId, message) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+    container.innerHTML = `
+        <div class="text-center text-gray-500 py-10 border rounded-lg bg-gray-50 col-span-1 md:col-span-2 lg:col-span-3">
+            <p class="font-medium">${message}</p>
+            <a href='/user/login' class='text-blue-600 hover:underline mt-2 inline-block text-sm'>로그인 페이지로 이동</a>
+        </div>
+    `;
+}
+
 window.onload = () => {
     if (!isAuthenticated) {
         document.getElementById('authNotice').classList.remove('hidden');
@@ -13,9 +51,18 @@ window.onload = () => {
 };
 
 function loadGoals() {
-    safeFetch(goalApiUrl)
+    csrfFetch(goalApiUrl)
+        .then(res => res.json())
         .then(data => {
             if (data) renderGoals(data);
+        })
+        .catch(err => {
+            if (err.status === 401) {
+                renderUnauthorized('goal-list', '저축 목표를 보려면 로그인이 필요합니다.');
+            } else {
+                console.error("Failed to fetch goals:", err);
+                document.getElementById('goal-list').innerHTML = '<p class="text-center text-red-500">데이터를 불러오는 중 오류가 발생했습니다.</p>';
+            }
         });
 }
 
@@ -105,7 +152,8 @@ document.getElementById('goal-form').addEventListener('submit', function(e) {
 function editGoal(id) {
     if (!isAuthenticated) return;
 
-    safeFetch(`${goalApiUrl}/${id}`)
+    csrfFetch(`${goalApiUrl}/${id}`)
+        .then(res => res.json())
         .then(goal => {
             if (!goal) return;
             document.getElementById('form-title').innerText = '목표 수정';
@@ -114,7 +162,8 @@ function editGoal(id) {
             document.getElementById('goal-target').value = goal.targetAmount;
             document.getElementById('goal-saved').value = goal.savedAmount;
             document.getElementById('goal-deadline').value = goal.deadline;
-        });
+        })
+        .catch(err => alert('❌ 목표 불러오기 실패: ' + err));
 }
 
 function deleteGoal(id) {

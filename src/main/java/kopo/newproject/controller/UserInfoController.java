@@ -9,9 +9,12 @@ import kopo.newproject.dto.PasswordChangeRequest;
 import kopo.newproject.dto.UserInfoDTO;
 import kopo.newproject.service.IMailService;
 import kopo.newproject.service.IUserInfoService;
+import kopo.newproject.service.IBudgetService;
+import kopo.newproject.repository.entity.jpa.BudgetEntity; // BudgetEntity 임포트
 import kopo.newproject.util.CmmUtil;
+import java.util.List; // List 임포트
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus; // HttpStatus 임포트
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,17 +24,21 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-@Slf4j
 @RequiredArgsConstructor
 @Controller
 @RequestMapping("/user")
 public class UserInfoController {
 
+    private static final Logger log = LoggerFactory.getLogger(UserInfoController.class);
+
     private final IUserInfoService userInfoService;
     private final IMailService mailService;
+    private final IBudgetService budgetService; // IBudgetService 주입
 
     /** ------------------------ 페이지 이동 ------------------------ **/
 
@@ -64,32 +71,7 @@ public class UserInfoController {
     }
 
 
-/*    @GetMapping("/checkLoginStatus")
-    public String checkLoginStatus(Model model) {
-        // 로그인 상태 확인
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // 로그인된 사용자가 없으면 "login" 페이지로 리다이렉트
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";
-        }
-
-        // 로그인된 사용자의 정보를 가져오기
-        Object principal = authentication.getPrincipal();
-        String username = "";
-
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else {
-            username = principal.toString();
-        }
-
-        // 사용자 정보 모델에 추가
-        model.addAttribute("username", username);
-
-        // 로그인된 사용자 정보 페이지로 이동
-        return "userDashboard";
-    }*/
 
 
 
@@ -104,14 +86,18 @@ public class UserInfoController {
         String email = CmmUtil.nvl(request.getParameter("email"));
         String password = CmmUtil.nvl(request.getParameter("password"));
         String name = CmmUtil.nvl(request.getParameter("name"));
+        String gender = CmmUtil.nvl(request.getParameter("gender")); // gender 추가
+        String birthDate = CmmUtil.nvl(request.getParameter("birthDate")); // birthDate 추가
 
-        log.info("입력 데이터 - user_id: {}, email: {}, name: {}", user_id, email, name);
+        log.info("입력 데이터 - user_id: {}, email: {}, name: {}, gender: {}, birthDate: {}", user_id, email, name, gender, birthDate);
 
         UserInfoDTO pDTO = UserInfoDTO.builder()
                 .user_id(user_id)
                 .email(email)
                 .password(password)
                 .name(name)
+                .gender(gender)
+                .birthDate(birthDate)
                 .build();
 
         int res = userInfoService.insertUserInfo(pDTO);
@@ -347,34 +333,16 @@ public class UserInfoController {
         UserInfoDTO userInfo = userInfoService.findByUserId(username); // 예시 메서드
         model.addAttribute("userInfo", userInfo);
 
+        // ✅ 현재 사용자의 예산 목록을 가져와 모델에 추가
+        List<BudgetEntity> budgets = budgetService.getBudgetsByUserId(username);
+        model.addAttribute("budgets", budgets);
+        log.info("마이페이지에 추가된 예산 수: {}", budgets.size());
+
         return "user/myPage";
     }
 
 
-//    // 비밀번호 변경
-//    @PostMapping("/changePassword")
-//    public String changePassword(@RequestParam String currentPassword,
-//                                 @RequestParam String newPassword,
-//                                 @AuthenticationPrincipal UserDetails userDetails,
-//                                 Model model) {
-//        if (userDetails == null) {
-//            model.addAttribute("errorMessage", "로그인된 사용자가 없습니다.");
-//            return "user/myPage";
-//        }
-//
-//        PasswordChangeRequest request = new PasswordChangeRequest(currentPassword, newPassword);
-//        boolean result = userInfoService.changePassword(userDetails.getUsername(), request);
-//
-//        if (result) {
-//            model.addAttribute("successMessage", "비밀번호가 성공적으로 변경되었습니다.");
-//            return "/logout";
-//        } else {
-//            model.addAttribute("errorMessage", "현재 비밀번호가 올바르지 않거나 사용자 정보를 찾을 수 없습니다.");
-//            return "user/myPage";
-//        }
-//
-//
-//    }
+
 @PostMapping("/changePassword")
 public String changePassword(@RequestParam String currentPassword,
                              @RequestParam String newPassword,
@@ -404,6 +372,47 @@ public String changePassword(@RequestParam String currentPassword,
         return "redirect:/user/myPage";
     }
 }
+
+
+    // ✅ 전역 알림 설정 업데이트 API
+    @PutMapping("/global-alert-setting")
+    public ResponseEntity<Void> updateGlobalAlertSetting(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Boolean enabled
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String userId = userDetails.getUsername();
+        try {
+            userInfoService.updateGlobalAlertSetting(userId, enabled);
+            log.info("사용자 {}의 전역 알림 설정이 {}로 변경되었습니다.", userId, enabled);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("사용자 {}의 전역 알림 설정 변경 중 오류 발생: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // ✅ 자동 예산 조정 설정 업데이트 API
+    @PutMapping("/auto-budget-adjustment-setting")
+    public ResponseEntity<Void> updateAutoBudgetAdjustmentSetting(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Boolean enabled
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String userId = userDetails.getUsername();
+        try {
+            userInfoService.updateAutoBudgetAdjustmentSetting(userId, enabled);
+            log.info("사용자 {}의 자동 예산 조정 설정이 {}로 변경되었습니다.", userId, enabled);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("사용자 {}의 자동 예산 조정 설정 변경 중 오류 발생: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
 
 
