@@ -20,6 +20,7 @@ import kopo.newproject.service.ISpendingService;
 import kopo.newproject.service.IUserInfoService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.ZoneId;
 import java.time.YearMonth;
 import java.util.*;
 import kopo.newproject.service.*;
@@ -71,6 +72,11 @@ public class ReportServiceImpl implements IReportService {
         List<BudgetEntity> budgets = budgetService.getBudgetsByUserIdAndYearMonth(userId, reportMonth.getYear(), reportMonth.getMonthValue());
         BigDecimal totalBudget = budgets.stream().map(BudgetEntity::getTotalBudget).reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // 이전 달 예산 데이터
+        List<BudgetEntity> previousMonthBudgets = budgetService.getBudgetsByUserIdAndYearMonth(userId, previousMonth.getYear(), previousMonth.getMonthValue());
+        BigDecimal previousMonthTotalBudget = previousMonthBudgets.stream().map(BudgetEntity::getTotalBudget).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
         // 4. 목표 데이터
         List<GoalDTO> goalDTOs = goalService.getGoalsByUser(userId);
         List<GoalEntity> goals = goalDTOs.stream()
@@ -82,6 +88,7 @@ public class ReportServiceImpl implements IReportService {
 
         // 6. 데이터 가공 및 DTO 필드 계산
         BigDecimal spendingChangePercentage = calculatePercentageChange(previousMonthTotalSpending, totalSpending);
+        BigDecimal budgetChangePercentage = calculatePercentageChange(previousMonthTotalBudget, totalBudget);
         BigDecimal budgetAchievementRate = calculateAchievementRate(totalSpending, totalBudget);
         List<MonthlyReportDTO.CategorySpendingDTO> topSpendingCategories = calculateTopSpendingCategories(spendingByCategory, totalSpending);
         List<MonthlyReportDTO.GoalStatusDTO> goalStatuses = calculateGoalStatuses(goals);
@@ -96,6 +103,8 @@ public class ReportServiceImpl implements IReportService {
                 .previousMonthTotalSpending(previousMonthTotalSpending)
                 .spendingChangePercentage(spendingChangePercentage)
                 .totalBudget(totalBudget)
+                .previousMonthTotalBudget(previousMonthTotalBudget)
+                .budgetChangePercentage(budgetChangePercentage)
                 .budgetAchievementRate(budgetAchievementRate)
                 .topSpendingCategories(topSpendingCategories)
                 .spendingByCategory(spendingByCategory)
@@ -202,7 +211,7 @@ public class ReportServiceImpl implements IReportService {
     @Override
     public void sendMonthlyReportToAllUsers() {
         log.info("월간 리포트 발송 스케줄러 시작");
-        YearMonth reportMonth = YearMonth.now().minusMonths(1); // 지난달을 기준으로 리포트 생성
+        YearMonth reportMonth = YearMonth.now(ZoneId.of("Asia/Seoul")).minusMonths(1); // 지난달을 기준으로 리포트 생성
 
         List<UserInfoEntity> allUsers = null;
         try {

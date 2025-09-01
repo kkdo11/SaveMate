@@ -258,8 +258,10 @@ public class UserInfoService implements IUserInfoService {
                     .password(null) // 보안상 제외
                     .name(entity.getName())
                     .created_at(createdAtStr)
-                    .globalAlertEnabled(entity.getGlobalAlertEnabled())
-                    .gender(entity.getGender())
+            .globalAlertEnabled(entity.getGlobalAlertEnabled())
+            .autoBudgetAdjustmentEnabled(entity.getAutoBudgetAdjustmentEnabled())
+            .budgetAlertThresholdPercentage(entity.getBudgetAlertThresholdPercentage())
+            .gender(entity.getGender())
                     .birthDate(entity.getBirthDate())
                     .exist_yn(null)
                     .build();

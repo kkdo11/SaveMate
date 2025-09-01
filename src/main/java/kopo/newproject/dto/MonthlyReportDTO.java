@@ -19,6 +19,8 @@ public class MonthlyReportDTO {
     private final BigDecimal previousMonthTotalSpending;
     private final BigDecimal spendingChangePercentage;
     private final BigDecimal totalBudget;
+    private final BigDecimal previousMonthTotalBudget;
+    private final BigDecimal budgetChangePercentage;
     private final BigDecimal budgetAchievementRate;
     private final List<CategorySpendingDTO> topSpendingCategories;
     private final Map<String, BigDecimal> spendingByCategory;

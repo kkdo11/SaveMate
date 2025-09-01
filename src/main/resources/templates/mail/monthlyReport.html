@@ -4,69 +4,108 @@
     <meta charset="UTF-8">
     <title th:text="${report.reportMonth.year} + '년 ' + ${report.reportMonth.monthValue} + '월 소비 리포트'"></title>
 </head>
-<body style="font-family: 'Apple SD Gothic Neo', 'sans-serif'; margin: 0; padding: 20px; background-color: #f4f4f4;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; margin: 0; padding: 20px; background-color: #f8f9fa; color: #343a40;">
 
-<div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-    
+<div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #dee2e6;">
+
     <!-- Header -->
-    <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center;">
-        <h1 style="margin: 0;" th:text="${report.reportMonth.year} + '년 ' + ${report.reportMonth.monthValue} + '월'"></h1>
-        <p style="margin: 5px 0 0; font-size: 1.2em;">월간 소비 리포트</p>
+    <div style="background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 24px; text-align: center;">
+        <h1 style="margin: 0; font-size: 24px;" th:text="${report.reportMonth.year} + '년 ' + ${report.reportMonth.monthValue} + '월'"></h1>
+        <p style="margin: 5px 0 0; font-size: 16px;">월간 소비 리포트</p>
     </div>
 
-    <div style="padding: 20px;">
-        <p style="font-size: 1.1em;" th:text="'안녕하세요, ' + ${report.userName} + '님!'"></p>
-        <p>지난 한 달간의 소비 내역을 정리해 드려요. SaveMate와 함께 다음 달도 현명한 소비를 계획해 보세요!</p>
+    <div style="padding: 24px;">
+        <p style="font-size: 18px; font-weight: 600;" th:text="'안녕하세요, ' + ${report.userName} + '님!'"></p>
+        <p style="color: #495057;">지난 한 달간의 소비 내역을 정리해 드려요. SaveMate와 함께 다음 달도 현명한 소비를 계획해 보세요!</p>
 
-        <!-- Summary Section -->
-        <div style="display: flex; justify-content: space-around; text-align: center; margin: 20px 0; padding: 10px; background-color: #f9f9f9; border-radius: 5px;">
-            <div>
-                <p style="margin: 0; color: #555; font-size: 0.9em;">총 지출</p>
-                <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #d9534f;" th:text="'₩' + ${#numbers.formatDecimal(report.totalSpending, 0, 'COMMA', 0, 'POINT')}"></p>
-            </div>
-            <div>
-                <p style="margin: 0; color: #555; font-size: 0.9em;">총 예산</p>
-                <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #5cb85c;" th:text="'₩' + ${#numbers.formatDecimal(report.totalBudget, 0, 'COMMA', 0, 'POINT')}"></p>
-            </div>
-            <div>
-                <p style="margin: 0; color: #555; font-size: 0.9em;">예산 달성률</p>
-                <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #f0ad4e;" th:text="${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></p>
-            </div>
-        </div>
-
-        <!-- AI Summary -->
-        <div style="background-color: #eef7ff; border-left: 4px solid #2196F3; margin: 20px 0; padding: 15px;">
-            <h3 style="margin-top: 0; color: #1E88E5;">AI 분석 요약</h3>
-            <p style="margin-bottom: 0;" th:text="${report.aiSummary}"></p>
-        </div>
-
-        
-
-        <!-- Goal Status -->
+        <!-- Section 1: 이달의 소비 요약 -->
         <div style="margin-top: 30px;">
-            <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">목표 달성 현황</h3>
-            <div th:if="${not #lists.isEmpty(report.goalStatuses)}">
-                <div th:each="goal : ${report.goalStatuses}" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee;">
-                    <p style="margin: 0 0 5px; font-weight: bold;" th:text="${goal.goalName}"></p>
-                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <span style="width: 48%; text-align: left; font-size: 0.9em; color: #555;" th:text="'₩' + ${#numbers.formatDecimal(goal.savedAmount, 0, 'COMMA', 0, 'POINT')}"></span>
-                        <span style="width: 48%; text-align: right; font-size: 0.9em; color: #555;" th:text="'₩' + ${#numbers.formatDecimal(goal.targetAmount, 0, 'COMMA', 0, 'POINT')}"></span>
+            <h2 style="font-size: 20px; border-bottom: 2px solid #6a11cb; padding-bottom: 10px; margin-bottom: 20px;">이달의 소비 요약</h2>
+            <div style="display: flex; justify-content: space-between; text-align: center; gap: 15px;">
+                <!-- 총 지출 -->
+                <div style="width: 48%; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">총 지출</p>
+                    <p style="margin: 8px 0; font-size: 22px; font-weight: bold; color: #d9534f;" th:text="'₩' + ${#numbers.formatDecimal(report.totalSpending, 0, 'COMMA', 0, 'POINT')}"></p>
+                    <div th:if="${report.previousMonthTotalSpending.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 12px; color: #6c757d;">
+                        <span th:if="${report.spendingChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #d9534f;">▲</span>
+                        <span th:if="${report.spendingChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) < 0}" style="color: #2575fc;">▼</span>
+                        <span th:text="${#numbers.formatDecimal(report.spendingChangePercentage.abs(), 1, 'COMMA', 1, 'POINT')} + '%'"></span>
+                        <span> 지난달 대비</span>
                     </div>
-                    <div style="background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px;">
-                        <div style="background-color: #f0ad4e; width: ${goal.achievementRate} + '%;'; border-radius: 5px; height: 10px;"></div>
+                </div>
+                <!-- 총 예산 -->
+                <div style="width: 48%; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">총 예산</p>
+                    <p style="margin: 8px 0; font-size: 22px; font-weight: bold; color: #2575fc;" th:text="'₩' + ${#numbers.formatDecimal(report.totalBudget, 0, 'COMMA', 0, 'POINT')}"></p>
+                    <div th:if="${report.previousMonthTotalBudget.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 12px; color: #6c757d;">
+                        <span th:if="${report.budgetChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #d9534f;">▲</span>
+                        <span th:if="${report.budgetChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) < 0}" style="color: #2575fc;">▼</span>
+                        <span th:text="${#numbers.formatDecimal(report.budgetChangePercentage.abs(), 1, 'COMMA', 1, 'POINT')} + '%'"></span>
+                        <span> 지난달 대비</span>
                     </div>
-                    <p style="text-align: right; font-size: 0.9em; margin: 5px 0 0;" th:text="'달성률: ' + ${#numbers.formatDecimal(goal.achievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></p>
                 </div>
             </div>
-            <div th:if="${#lists.isEmpty(report.goalStatuses)}">
-                <p style="color: #888; text-align: center; padding: 10px;">진행 중인 목표가 없습니다.</p>
+            <!-- 예산 사용률 -->
+            <div style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">예산 사용률</p>
+                    <span style="font-size: 14px; font-weight: bold; color: #343a40;" th:text="${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></span>
+                </div>
+                <div style="background-color: #e9ecef; border-radius: 8px; height: 20px; overflow: hidden;">
+                    <div th:style="'background: linear-gradient(to right, #f0ad4e, #f9d423); width: ' + ${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%; height: 20px; text-align: center; color: white; font-weight: bold; line-height: 20px; font-size: 12px;'" 
+                         th:text="${report.budgetAchievementRate.compareTo(T(java.math.BigDecimal).valueOf(10)) >= 0 ? #numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT') + '%' : ''}"></div>
+                </div>
             </div>
         </div>
 
+        <!-- Section 2: TOP 3 지출 카테고리 -->
+        <div style="margin-top: 30px;" th:if="${not #lists.isEmpty(report.topSpendingCategories)}">
+            <h2 style="font-size: 20px; border-bottom: 2px solid #6a11cb; padding-bottom: 10px; margin-bottom: 20px;">TOP 3 지출 카테고리</h2>
+            <div th:each="cat : ${report.topSpendingCategories}" style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="font-weight: 500;" th:text="${cat.category}"></span>
+                    <span style="color: #495057;" th:text="'₩' + ${#numbers.formatDecimal(cat.amount, 0, 'COMMA', 0, 'POINT')}"></span>
+                </div>
+                <div style="background-color: #e9ecef; border-radius: 8px; height: 12px;">
+                    <div th:style="'background-color: #fd7e14; width: ' + ${#numbers.formatDecimal(cat.percentage, 1, 'COMMA', 1, 'POINT')} + '%; height: 12px; border-radius: 8px;'"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: AI 분석 -->
+        <div style="margin-top: 30px; background-color: #eef7ff; border-left: 5px solid #2575fc; padding: 20px; border-radius: 0 8px 8px 0;">
+            <h2 style="margin-top: 0; font-size: 20px; color: #1E88E5;">AI 분석</h2>
+            <p style="margin-bottom: 0; color: #343a40; line-height: 1.6;" th:text="${report.aiSummary}"></p>
+        </div>
+
+        <!-- Section 4: 목표 달성 현황 -->
+        <div style="margin-top: 30px;" th:if="${not #lists.isEmpty(report.goalStatuses)}">
+            <h2 style="font-size: 20px; border-bottom: 2px solid #6a11cb; padding-bottom: 10px; margin-bottom: 20px;">목표 달성 현황</h2>
+            <div th:each="goal : ${report.goalStatuses}" style="margin-bottom: 15px;">
+                <p style="margin: 0 0 8px; font-weight: 500; font-size: 16px;" th:text="${goal.goalName}"></p>
+                <div style="background-color: #e9ecef; border-radius: 8px; height: 15px; margin-bottom: 8px;">
+                    <div th:style="'background: linear-gradient(to right, #28a745, #20c997); width: ' + ${goal.achievementRate} + '%; height: 15px; border-radius: 8px;'"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6c757d;">
+                    <span th:text="'달성률: ' + ${#numbers.formatDecimal(goal.achievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></span>
+                    <span th:text="'₩' + ${#numbers.formatDecimal(goal.savedAmount, 0, 'COMMA', 0, 'POINT')} + ' / ' + '₩' + ${#numbers.formatDecimal(goal.targetAmount, 0, 'COMMA', 0, 'POINT')}"></span>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(report.goalStatuses)}" style="text-align: center; color: #6c757d; padding: 20px; background-color: #f8f9fa; border-radius: 8px; margin-top: 30px;">
+            진행 중인 목표가 없습니다. 지금 새로운 목표를 세워보는 건 어떨까요?
+        </div>
+
+        <!-- Section 5: Call to Action -->
+        <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #dee2e6;">
+            <h2 style="font-size: 20px; margin-bottom: 20px;">새로운 시작을 위한 제안</h2>
+            <a href="https://example.com/spending" style="background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">자세한 지출 내역 확인하기</a>
+            <a href="https://example.com/budget" style="background-color: #6c757d; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">다음 달 예산 설정하기</a>
+        </div>
     </div>
 
     <!-- Footer -->
-    <div style="background-color: #f4f4f4; color: #888; padding: 15px; text-align: center; font-size: 0.8em;">
+    <div style="background-color: #f8f9fa; color: #6c757d; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #dee2e6;">
         <p style="margin: 0;">본 메일은 SaveMate에서 자동 발송되었습니다.</p>
         <p style="margin: 5px 0 0;">&copy; 2025 SaveMate. All Rights Reserved.</p>
     </div>
