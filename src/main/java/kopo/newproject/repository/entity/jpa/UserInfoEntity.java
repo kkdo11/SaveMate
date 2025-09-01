@@ -44,6 +44,9 @@ public class UserInfoEntity {
     @Column(name = "auto_budget_adjustment_enabled", columnDefinition = "BOOLEAN DEFAULT FALSE", nullable = false)
     private Boolean autoBudgetAdjustmentEnabled; // 물가 반영 예산 자동 조정 활성화 여부
 
+    @Column(name = "budget_alert_threshold_percentage", columnDefinition = "DOUBLE DEFAULT 1.0", nullable = false)
+    private Double budgetAlertThresholdPercentage; // 예산 알림 임계값 (예: 0.9 = 90%, 1.0 = 100%, 1.1 = 110%)
+
     @Column(name = "gender", length = 10)
     private String gender; // 성별 (M: 남성, F: 여성)
 

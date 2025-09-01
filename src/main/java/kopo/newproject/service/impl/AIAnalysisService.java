@@ -117,13 +117,17 @@ public class AIAnalysisService implements IAIAnalysisService {
     @Override
     public String analyze(String userId, String yearMonthStr) {
         YearMonth yearMonth = YearMonth.parse(yearMonthStr);
+        long preprocessStartTime = System.currentTimeMillis();
         Map<String, Object> data = preprocessorService.generateAnalysisInput(userId, yearMonth);
+        log.info("AI 분석 - 데이터 전처리 완료 ({}ms)", System.currentTimeMillis() - preprocessStartTime);
         return analyzeUserSpending(userId, yearMonth, data);
     }
 
     private String analyzeUserSpending(String userId, YearMonth yearMonth, Map<String, Object> preprocessedData) {
+        long startTime = System.currentTimeMillis();
         try {
             String requestJson = objectMapper.writeValueAsString(preprocessedData);
+            log.info("AI 분석 - 전처리 데이터 직렬화 완료 ({}ms)", System.currentTimeMillis() - startTime);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -137,8 +141,10 @@ public class AIAnalysisService implements IAIAnalysisService {
                     }
             );
 
+            long apiCallStartTime = System.currentTimeMillis();
             HttpEntity<?> entity = new HttpEntity<>(body, headers);
             ResponseEntity<GptResponseDTO> response = restTemplate.exchange(openAiUrl, HttpMethod.POST, entity, GptResponseDTO.class);
+            log.info("AI 분석 - OpenAI API 호출 완료 ({}ms)", System.currentTimeMillis() - apiCallStartTime);
 
             // GPT 응답에서 실제 content 추출
             String jsonContent = Optional.ofNullable(response.getBody())
@@ -147,6 +153,7 @@ public class AIAnalysisService implements IAIAnalysisService {
                     .map(choices -> choices.get(0).getMessage().getContent())
                     .orElseThrow(() -> new RuntimeException("GPT 응답에서 content를 찾을 수 없습니다."));
 
+            long parseSaveStartTime = System.currentTimeMillis();
             // content 내부의 JSON 파싱
             Map<String, String> parsed = objectMapper.readValue(jsonContent, new TypeReference<>() {});
 
@@ -159,7 +166,9 @@ public class AIAnalysisService implements IAIAnalysisService {
                     .version(1) // Simplified versioning
                     .build();
             aiAnalysisRepository.save(analysis);
+            log.info("AI 분석 - 응답 파싱 및 DB 저장 완료 ({}ms)", System.currentTimeMillis() - parseSaveStartTime);
 
+            log.info("AI 분석 전체 완료 ({}ms)", System.currentTimeMillis() - startTime);
             return objectMapper.writeValueAsString(parsed);
         } catch (Exception e) {
             log.error("Error during GPT analysis: {}", e.getMessage(), e);

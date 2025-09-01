@@ -302,6 +302,21 @@ public class UserInfoService implements IUserInfoService {
     }
 
     @Override
+    @Transactional
+    public boolean updateBudgetAlertThresholdSetting(String userId, Double thresholdPercentage) throws Exception {
+        Optional<UserInfoEntity> optionalUser = userInfoRepository.findByUserId(userId);
+        if (optionalUser.isPresent()) {
+            UserInfoEntity user = optionalUser.get();
+            user.setBudgetAlertThresholdPercentage(thresholdPercentage);
+            userInfoRepository.save(user);
+            log.info("[UserInfoService] 사용자 {}의 예산 알림 임계값 설정이 {}로 변경되었습니다.", userId, thresholdPercentage);
+            return true;
+        }
+        log.warn("[UserInfoService] updateBudgetAlertThresholdSetting 실패: 사용자 찾을 수 없음 - userId: {}", userId);
+        return false;
+    }
+
+    @Override
     public List<UserInfoEntity> getAllUsers() throws Exception {
         log.info("Getting all users");
         return userInfoRepository.findAll();

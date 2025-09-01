@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime; // LocalDateTime 임포트 추가
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.YearMonth;
@@ -71,7 +72,16 @@ public class BudgetService implements IBudgetService {
 
         if (optional.isPresent() && optional.get().getUserId().equals(userId)) {
             BudgetEntity entity = optional.get();
+
+            // Preserve the existing lastAdjustedDate
+            LocalDateTime existingLastAdjustedDate = entity.getLastAdjustedDate();
+
+            // Update core budget fields
             entity.updateBudgetInfo(dto.getYear(), dto.getMonth(), dto.getCategory(), dto.getTotalBudget());
+
+            // Set back the preserved lastAdjustedDate
+            entity.setLastAdjustedDate(existingLastAdjustedDate);
+
             budgetRepository.save(entity);
             return true;
         }
@@ -222,6 +232,7 @@ public class BudgetService implements IBudgetService {
             log.info("Adjusting budget for category '{}': From {} to {}", budget.getCategory(), originalBudget, adjustedBudget);
 
             budget.updateBudgetInfo(budget.getYear(), budget.getMonth(), budget.getCategory(), adjustedBudget);
+            budget.setLastAdjustedDate(LocalDateTime.now()); // Set last adjusted date
             budgetRepository.save(budget);
         }
 
@@ -282,6 +293,7 @@ public class BudgetService implements IBudgetService {
                             user.getUserId(), budget.getCategory(), originalBudget, adjustedBudget);
 
                     budget.updateBudgetInfo(budget.getYear(), budget.getMonth(), budget.getCategory(), adjustedBudget);
+                    budget.setLastAdjustedDate(LocalDateTime.now()); // Set last adjusted date
                     budgetRepository.save(budget);
 
                     emailContent.append(String.format("<tr><td>%s</td><td>%s원</td><td>%s원</td></tr>",

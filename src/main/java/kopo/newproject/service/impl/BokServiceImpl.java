@@ -101,6 +101,14 @@ public class BokServiceImpl implements IBokService {
 
             double finalRate = growthRate.setScale(2, RoundingMode.HALF_UP).doubleValue();
             log.info("Calculated CPI growth rate: {}%", finalRate);
+
+            if (finalRate > 0) {
+                log.info("이는 인플레이션(물가 상승)을 의미하며, 예산이 상향 조정됩니다.");
+            } else if (finalRate < 0) {
+                log.info("이는 디플레이션(물가 하락)을 의미하며, 예산이 하향 조정됩니다.");
+            } else {
+                log.info("CPI 성장률이 0이므로, 예산은 변경되지 않습니다.");
+            }
             return finalRate;
 
         } catch (NumberFormatException e) {

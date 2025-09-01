@@ -223,6 +223,11 @@ function fetchLatestAnalysis() {
 
 function requestAnalysis(event) {
     event.preventDefault();
+
+    if (!confirm("AI 분석은 약 20초 정도 소요될 수 있습니다. 계속하시겠습니까?")) {
+        return;
+    }
+
     const month = document.getElementById('analysisMonth').value;
     if (!month) {
         showToast('error', '월을 선택하세요', '분석할 월을 선택해주세요.');

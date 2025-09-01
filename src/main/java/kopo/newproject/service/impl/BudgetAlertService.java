@@ -5,8 +5,10 @@ import kopo.newproject.dto.SpendingTotalDTO;
 import kopo.newproject.dto.UserInfoDTO;
 import kopo.newproject.repository.entity.jpa.BudgetEntity;
 import kopo.newproject.repository.entity.jpa.BudgetAlertLogEntity;
+import kopo.newproject.repository.entity.jpa.NotificationEntity;
 import kopo.newproject.repository.jpa.BudgetRepository;
 import kopo.newproject.repository.jpa.BudgetAlertLogRepository;
+import kopo.newproject.repository.jpa.NotificationRepository; // NotificationRepository 임포트
 import kopo.newproject.repository.mongo.SpendingRepository;
 import kopo.newproject.service.IMailService;
 import kopo.newproject.service.ISpendingService;
@@ -36,6 +38,7 @@ public class BudgetAlertService {
     private final IMailService mailService;
     private final IUserInfoService userInfoService; // 사용자 정보 서비스 추가
     private final ISpendingService spendingService; // 지출 서비스 추가
+    private final NotificationRepository notificationRepository; // 알림 레포지토리 추가
 
     // 매일 새벽 4시에 실행
     @Scheduled(cron = "0 15 00  * * ?")
@@ -117,15 +120,19 @@ public class BudgetAlertService {
                     dailyAverageSpending, remainingDays, estimatedTotalSpending);
 
             // 예상 지출액이 예산을 초과하는 경우
-            if (estimatedTotalSpending.compareTo(budget.getTotalBudget()) > 0) {
-                log.info("사용자 {}의 {} 카테고리 예산 초과 예측됨. 알림 발송 시도.", userId, category);
-                sendAlert(userId, budget, estimatedTotalSpending);
+            // ✅ 사용자 정의 임계값 적용
+            double threshold = (user.budgetAlertThresholdPercentage() != null) ? user.budgetAlertThresholdPercentage() : 1.0;
+            BigDecimal thresholdBudget = budget.getTotalBudget().multiply(BigDecimal.valueOf(threshold));
+
+            if (estimatedTotalSpending.compareTo(thresholdBudget) > 0) {
+                log.info("사용자 {}의 {} 카테고리 예산 초과 예측됨 (임계값 {}%). 알림 발송 시도.", userId, category, threshold * 100);
+                sendAlert(userId, budget, estimatedTotalSpending, threshold); // Pass threshold to sendAlert
             }
         }
         log.info("예산 초과 예측 알림 스케줄러 종료");
     }
 
-    private void sendAlert(String userId, BudgetEntity budget, BigDecimal estimatedSpending) {
+    private void sendAlert(String userId, BudgetEntity budget, BigDecimal estimatedSpending, double threshold) {
         try {
             // 사용자 정보에서 이메일을 가져오는 로직
             UserInfoDTO user = userInfoService.findByUserId(userId);
@@ -139,11 +146,12 @@ public class BudgetAlertService {
             String content = String.format(
                 "안녕하세요, %s님.\n" +
                 "이번 달 %s 카테고리의 소비 속도를 분석한 결과, 이달 말까지 약 %,.0f원을 사용하실 것으로 예측됩니다.\n" +
-                "설정하신 예산 %,.0f원을 초과할 가능성이 높으니, 남은 기간 동안 지출에 유의해 주세요.",
+                "설정하신 예산 %,.0f원의 %.0f%%를 초과할 가능성이 높으니, 남은 기간 동안 지출에 유의해 주세요.",
                 user.name(), // userId 대신 사용자 이름 사용
                 budget.getCategory(),
                 estimatedSpending,
-                budget.getTotalBudget()
+                budget.getTotalBudget(),
+                threshold * 100 // Pass threshold percentage
             );
 
             // MailDTO를 사용하여 메일 발송
@@ -152,6 +160,18 @@ public class BudgetAlertService {
                     .title(subject)
                     .contents(content)
                     .build();
+
+            // ✅ 인앱 알림 저장
+            NotificationEntity notification = NotificationEntity.builder()
+                    .userId(userId)
+                    .type("BUDGET_ALERT") // 알림 타입
+                    .message(content) // 메일 내용과 동일하게 사용
+                    .isRead(false) // 처음에는 읽지 않은 상태
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(notification);
+            log.info("사용자 {}에게 인앱 알림 저장 완료", userId);
+
             mailService.doSendMail(mailDTO);
 
             // 알림 발송 기록 저장

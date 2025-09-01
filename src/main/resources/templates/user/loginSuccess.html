@@ -11,6 +11,10 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
+    <script th:inline="javascript">
+        const isAuthenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+    </script>
+
     <script type="text/javascript">
         // HTML 로딩 후 실행
         $(document).ready(function () {
@@ -55,6 +59,7 @@
             });
         });
     </script>
+<script src="/js/notification.js"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-800">

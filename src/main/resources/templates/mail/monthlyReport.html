@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${report.reportMonth.year} + '년 ' + ${report.reportMonth.monthValue} + '월 소비 리포트'"></title>
+</head>
+<body style="font-family: 'Apple SD Gothic Neo', 'sans-serif'; margin: 0; padding: 20px; background-color: #f4f4f4;">
+
+<div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    
+    <!-- Header -->
+    <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center;">
+        <h1 style="margin: 0;" th:text="${report.reportMonth.year} + '년 ' + ${report.reportMonth.monthValue} + '월'"></h1>
+        <p style="margin: 5px 0 0; font-size: 1.2em;">월간 소비 리포트</p>
+    </div>
+
+    <div style="padding: 20px;">
+        <p style="font-size: 1.1em;" th:text="'안녕하세요, ' + ${report.userName} + '님!'"></p>
+        <p>지난 한 달간의 소비 내역을 정리해 드려요. SaveMate와 함께 다음 달도 현명한 소비를 계획해 보세요!</p>
+
+        <!-- Summary Section -->
+        <div style="display: flex; justify-content: space-around; text-align: center; margin: 20px 0; padding: 10px; background-color: #f9f9f9; border-radius: 5px;">
+            <div>
+                <p style="margin: 0; color: #555; font-size: 0.9em;">총 지출</p>
+                <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #d9534f;" th:text="'₩' + ${#numbers.formatDecimal(report.totalSpending, 0, 'COMMA', 0, 'POINT')}"></p>
+            </div>
+            <div>
+                <p style="margin: 0; color: #555; font-size: 0.9em;">총 예산</p>
+                <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #5cb85c;" th:text="'₩' + ${#numbers.formatDecimal(report.totalBudget, 0, 'COMMA', 0, 'POINT')}"></p>
+            </div>
+            <div>
+                <p style="margin: 0; color: #555; font-size: 0.9em;">예산 달성률</p>
+                <p style="margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #f0ad4e;" th:text="${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></p>
+            </div>
+        </div>
+
+        <!-- AI Summary -->
+        <div style="background-color: #eef7ff; border-left: 4px solid #2196F3; margin: 20px 0; padding: 15px;">
+            <h3 style="margin-top: 0; color: #1E88E5;">AI 분석 요약</h3>
+            <p style="margin-bottom: 0;" th:text="${report.aiSummary}"></p>
+        </div>
+
+        
+
+        <!-- Goal Status -->
+        <div style="margin-top: 30px;">
+            <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">목표 달성 현황</h3>
+            <div th:if="${not #lists.isEmpty(report.goalStatuses)}">
+                <div th:each="goal : ${report.goalStatuses}" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #eee;">
+                    <p style="margin: 0 0 5px; font-weight: bold;" th:text="${goal.goalName}"></p>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="width: 48%; text-align: left; font-size: 0.9em; color: #555;" th:text="'₩' + ${#numbers.formatDecimal(goal.savedAmount, 0, 'COMMA', 0, 'POINT')}"></span>
+                        <span style="width: 48%; text-align: right; font-size: 0.9em; color: #555;" th:text="'₩' + ${#numbers.formatDecimal(goal.targetAmount, 0, 'COMMA', 0, 'POINT')}"></span>
+                    </div>
+                    <div style="background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px;">
+                        <div style="background-color: #f0ad4e; width: ${goal.achievementRate} + '%;'; border-radius: 5px; height: 10px;"></div>
+                    </div>
+                    <p style="text-align: right; font-size: 0.9em; margin: 5px 0 0;" th:text="'달성률: ' + ${#numbers.formatDecimal(goal.achievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></p>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(report.goalStatuses)}">
+                <p style="color: #888; text-align: center; padding: 10px;">진행 중인 목표가 없습니다.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f4f4f4; color: #888; padding: 15px; text-align: center; font-size: 0.8em;">
+        <p style="margin: 0;">본 메일은 SaveMate에서 자동 발송되었습니다.</p>
+        <p style="margin: 5px 0 0;">&copy; 2025 SaveMate. All Rights Reserved.</p>
+    </div>
+
+</div>
+
+</body>
+</html>

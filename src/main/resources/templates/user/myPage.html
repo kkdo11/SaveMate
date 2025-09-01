@@ -11,6 +11,10 @@
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 
+    <script th:inline="javascript">
+        const isAuthenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+    </script>
+
     <script>
         function csrfFetch(url, options = {}) {
             const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute("content");
@@ -31,207 +35,253 @@
 
 <div th:replace="~{navbar :: navbar}"></div>
 
-<div class="flex flex-col lg:flex-row min-h-screen">
-    <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12 bg-white">
-        <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
-            <h2 class="text-3xl font-bold mb-6 text-gray-800 text-center">마이페이지</h2>
+<main class="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow mt-8">
+    <h2 class="text-2xl font-semibold mb-6">마이페이지</h2>
 
-            <div class="space-y-3 mb-8">
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">아이디:</span>
-                    <span th:text="${userInfo.user_id}" class="text-gray-800">user_id</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">이름:</span>
-                    <span th:text="${userInfo.name}" class="text-gray-800">이름</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">이메일:</span>
-                    <span th:text="${userInfo.email}" class="text-gray-800">email@example.com</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">성별:</span>
-                    <span th:text="${userInfo.gender}" class="text-gray-800">성별</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">생년월일:</span>
-                    <span th:text="${userInfo.birthDate}" class="text-gray-800">생년월일</span>
-                </div>
+    <section class="mb-8 p-4 border rounded-lg bg-gray-50">
+        <h3 class="text-xl font-semibold mb-4">내 정보</h3>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <span class="font-semibold text-gray-700">아이디:</span>
+                <span th:text="${userInfo.user_id}" class="text-gray-800">user_id</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="font-semibold text-gray-700">이름:</span>
+                <span th:text="${userInfo.name}" class="text-gray-800">이름</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="font-semibold text-gray-700">이메일:</span>
+                <span th:text="${userInfo.email}" class="text-gray-800">email@example.com</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="font-semibold text-gray-700">성별:</span>
+                <span th:text="${userInfo.gender}" class="text-gray-800">성별</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="font-semibold text-gray-700">생년월일:</span>
+                <span th:text="${userInfo.birthDate}" class="text-gray-800">생년월일</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="mb-8 p-4 border rounded-lg bg-gray-50">
+        <h3 class="text-xl font-semibold mb-4">비밀번호 변경</h3>
+        <form th:action="@{/user/changePassword}" method="post" class="space-y-5">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div>
+                <label for="currentPassword" class="block mb-1 text-sm font-medium">현재 비밀번호</label>
+                <input type="password" name="currentPassword" id="currentPassword"
+                       class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                       required />
             </div>
 
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">비밀번호 변경</h3>
-            <form th:action="@{/user/changePassword}" method="post" class="space-y-5">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
-                <div>
-                    <label for="currentPassword" class="block mb-1 text-sm font-medium">현재 비밀번호</label>
-                    <input type="password" name="currentPassword" id="currentPassword"
-                           class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                           required />
-                </div>
-
-                <div>
-                    <label for="newPassword" class="block mb-1 text-sm font-medium">새 비밀번호</label>
-                    <input type="password" name="newPassword" id="newPassword"
-                           class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                           required />
-                </div>
-
-                <button type="submit"
-                        class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition">
-                    비밀번호 변경
-                </button>
-            </form>
-
-            <div class="mt-4 text-center">
-                <span th:if="${errorMessage}" th:text="${errorMessage}"
-                      class="text-red-500 text-sm"></span>
-                <span th:if="${successMessage}" th:text="${successMessage}"
-                      class="text-green-600 text-sm"></span>
+            <div>
+                <label for="newPassword" class="block mb-1 text-sm font-medium">새 비밀번호</label>
+                <input type="password" name="newPassword" id="newPassword"
+                       class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                       required />
             </div>
 
-            <!-- ✅ 소비 알림 받기 스위치 -->
-            <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">소비 알림 받기</h3>
-            <div class="flex items-center justify-center bg-gray-50 p-4 rounded-lg shadow-sm">
-                <span class="font-semibold text-gray-700 mr-4">알림 활성화</span>
+            <button type="submit"
+                    class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition">
+                비밀번호 변경
+            </button>
+        </form>
+
+        <div class="mt-4 text-center">
+            <span th:if="${errorMessage}" th:text="${errorMessage}"
+                  class="text-red-500 text-sm"></span>
+            <span th:if="${successMessage}" th:text="${successMessage}"
+                  class="text-green-600 text-sm"></span>
+        </div>
+    </section>
+
+    <section class="mb-8 p-4 border rounded-lg bg-gray-50">
+        <h3 class="text-xl font-semibold mb-4">알림 및 자동 조정 설정</h3>
+        <div class="space-y-6">
+            <div class="flex items-center justify-between">
+                <span class="font-semibold text-gray-700">소비 알림 활성화</span>
                 <div class="form-check form-switch">
-                    <input class="form-check-input h-6 w-11 appearance-none bg-gray-300 checked:bg-purple-600 focus:outline-none rounded-full relative cursor-pointer transition-colors duration-200 ease-in-out" 
-                           type="checkbox" role="switch" id="globalAlertToggle"
+                    <input class="form-check-input h-6 w-11 appearance-none bg-gray-300 checked:bg-purple-600 focus:outline-none rounded-full relative cursor-pointer transition-colors duration-200 ease-in-out"
+                           type="checkbox" role="checkbox" id="globalAlertToggle"
                            th:checked="${userInfo.globalAlertEnabled}">
                     <label class="form-check-label inline-block text-gray-700 ml-3" for="globalAlertToggle"></label>
                 </div>
             </div>
 
-            <!-- ✅ 물가 반영 예산 자동 조정 스위치 -->
-            <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">물가 반영 예산 자동 조정</h3>
-            <div class="flex items-center justify-center bg-gray-50 p-4 rounded-lg shadow-sm">
-                <span class="font-semibold text-gray-700 mr-4">자동 조정 활성화</span>
+            <div class="flex items-center justify-between">
+                <span class="font-semibold text-gray-700">물가 반영 예산 자동 조정 활성화</span>
                 <div class="form-check form-switch">
-                    <input class="form-check-input h-6 w-11 appearance-none bg-gray-300 checked:bg-purple-600 focus:outline-none rounded-full relative cursor-pointer transition-colors duration-200 ease-in-out" 
-                           type="checkbox" role="switch" id="autoBudgetAdjustmentToggle"
+                    <input class="form-check-input h-6 w-11 appearance-none bg-gray-300 checked:bg-purple-600 focus:outline-none rounded-full relative cursor-pointer transition-colors duration-200 ease-in-out"
+                           type="checkbox" role="checkbox" id="autoBudgetAdjustmentToggle"
                            th:checked="${userInfo.autoBudgetAdjustmentEnabled}">
                     <label class="form-check-label inline-block text-gray-700 ml-3" for="autoBudgetAdjustmentToggle"></label>
                 </div>
             </div>
 
-            <!-- ✅ 월간 리포트 수동 발송 버튼 -->
-            <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">월간 리포트 다시 받기</h3>
-            <div class="flex items-center justify-center bg-gray-50 p-4 rounded-lg shadow-sm">
-                <button id="sendReportBtn" 
-                        class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition">
-                    지난달 리포트 이메일로 받기
-                </button>
+            <div class="flex flex-col items-center justify-center pt-4">
+                <label for="budgetAlertThreshold" class="font-semibold text-gray-700 mb-2">
+                    예상 지출이 예산의 <span id="thresholdValueDisplay">100</span>% 초과 시 알림
+                </label>
+                <input type="range" id="myRange" min="50" max="150" step="5"
+                       th:value="${userInfo.budgetAlertThresholdPercentage != null ? userInfo.budgetAlertThresholdPercentage * 100 : 100}"
+                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
             </div>
-
         </div>
-    </div>
+    </section>
 
-    <!-- 오른쪽 브랜드 영역 -->
-    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-purple-500 to-indigo-600 items-center justify-center">
-        <img src="/images/logo1.png" alt="Savemate Logo" class="w-72 h-auto rounded-lg shadow-2xl" />
-    </div>
-</div>
+    <section class="mb-8 p-4 border rounded-lg bg-gray-50">
+        <h3 class="text-xl font-semibold mb-4">월간 리포트</h3>
+        <div class="flex items-center justify-center">
+            <button id="sendReportBtn"
+                    class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition">
+                지난달 리포트 이메일로 받기
+            </button>
+        </div>
+    </section>
+</main>
 
 <script th:inline="javascript">
-/*<![CDATA[*/
+    /*<![CDATA[*/
 
-// ✅ API 호출 함수 (기존 csrfFetch 사용)
-async function updateGlobalAlertSetting(enabled) {
-    const url = `/user/global-alert-setting?enabled=${enabled}`;
-    try {
-        const response = await csrfFetch(url, {
-            method: 'PUT',
-        });
+    // ✅ API 호출 함수 (기존 csrfFetch 사용)
+    async function updateGlobalAlertSetting(enabled) {
+        const url = `/user/global-alert-setting?enabled=${enabled}`;
+        try {
+            const response = await csrfFetch(url, {
+                method: 'PUT',
+            });
 
-        if (response.ok) {
-            console.log(`전역 알림 설정이 ${enabled}로 성공적으로 업데이트되었습니다.`);
-            // 사용자에게 성공 메시지 표시
-            // alert('전역 알림 설정이 저장되었습니다!');
-        } else {
-            const errorText = await response.text();
-            console.error(`전역 알림 설정 업데이트 실패: ${errorText}`);
-            alert('전역 알림 설정 저장 실패: ' + errorText);
-        }
-    } catch (error) {
-        console.error('네트워크 오류:', error);
-        alert('네트워크 오류가 발생했습니다.');
-    }
-}
-
-// ✅ 자동 예산 조정 설정 업데이트 함수
-async function updateAutoBudgetAdjustmentSetting(enabled) {
-    const url = `/user/auto-budget-adjustment-setting?enabled=${enabled}`;
-    try {
-        const response = await csrfFetch(url, {
-            method: 'PUT',
-        });
-
-        if (response.ok) {
-            console.log(`자동 예산 조정 설정이 ${enabled}로 성공적으로 업데이트되었습니다.`);
-            // 사용자에게 성공 메시지 표시
-            // alert('자동 예산 조정 설정이 저장되었습니다!');
-        } else {
-            const errorText = await response.text();
-            console.error(`자동 예산 조정 설정 업데이트 실패: ${errorText}`);
-            alert('자동 예산 조정 설정 저장 실패: ' + errorText);
-        }
-    } catch (error) {
-        console.error('네트워크 오류:', error);
-        alert('네트워크 오류가 발생했습니다.');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const globalAlertToggle = document.getElementById('globalAlertToggle');
-    if (globalAlertToggle) {
-        globalAlertToggle.addEventListener('change', () => {
-            const enabled = globalAlertToggle.checked;
-            updateGlobalAlertSetting(enabled);
-        });
-    }
-
-    const autoBudgetAdjustmentToggle = document.getElementById('autoBudgetAdjustmentToggle');
-    if (autoBudgetAdjustmentToggle) {
-        autoBudgetAdjustmentToggle.addEventListener('change', () => {
-            const enabled = autoBudgetAdjustmentToggle.checked;
-            updateAutoBudgetAdjustmentSetting(enabled);
-        });
-    }
-
-    // ✅ 월간 리포트 발송 버튼 이벤트 리스너
-    const sendReportBtn = document.getElementById('sendReportBtn');
-    if (sendReportBtn) {
-        sendReportBtn.addEventListener('click', async () => {
-            const userId = /*[[${userInfo.user_id}]]*/ 'defaultUserId'; // Thymeleaf를 통해 userId를 가져옴
-            const url = `/test/send-report/${userId}`;
-            
-            // 버튼 비활성화 및 로딩 표시
-            sendReportBtn.disabled = true;
-            sendReportBtn.textContent = '발송 중...';
-
-            try {
-                const response = await csrfFetch(url, { method: 'GET' });
-                const resultText = await response.text();
-
-                if (response.ok) {
-                    alert('리포트 발송 요청 성공! 이메일을 확인해주세요.');
-                } else {
-                    alert('리포트 발송 실패: ' + resultText);
-                }
-            } catch (error) {
-                console.error('리포트 발송 네트워크 오류:', error);
-                alert('리포트 발송 중 네트워크 오류가 발생했습니다.');
-            } finally {
-                // 버튼 다시 활성화
-                sendReportBtn.disabled = false;
-                sendReportBtn.textContent = '지난달 리포트 이메일로 받기';
+            if (response.ok) {
+                console.log(`전역 알림 설정이 ${enabled}로 성공적으로 업데이트되었습니다.`);
+                // 사용자에게 성공 메시지 표시
+                // alert('전역 알림 설정이 저장되었습니다!');
+            } else {
+                const errorText = await response.text();
+                console.error(`전역 알림 설정 업데이트 실패: ${errorText}`);
+                alert('전역 알림 설정 저장 실패: ' + errorText);
             }
-        });
+        } catch (error) {
+            console.error('네트워크 오류:', error);
+            alert('네트워크 오류가 발생했습니다.');
+        }
     }
-});
 
-/*]]>*/
+    // ✅ 자동 예산 조정 설정 업데이트 함수
+    async function updateAutoBudgetAdjustmentSetting(enabled) {
+        const url = `/user/auto-budget-adjustment-setting?enabled=${enabled}`;
+        try {
+            const response = await csrfFetch(url, {
+                method: 'PUT',
+            });
+
+            if (response.ok) {
+                console.log(`자동 예산 조정 설정이 ${enabled}로 성공적으로 업데이트되었습니다.`);
+                // 사용자에게 성공 메시지 표시
+                // alert('자동 예산 조정 설정이 저장되었습니다!');
+            } else {
+                const errorText = await response.text();
+                console.error(`자동 예산 조정 설정 업데이트 실패: ${errorText}`);
+                alert('자동 예산 조정 설정 저장 실패: ' + errorText);
+            }
+        } catch (error) {
+            console.error('네트워크 오류:', error);
+            alert('네트워크 오류가 발생했습니다.');
+        }
+    }
+
+    // ✅ 예산 알림 임계값 설정 업데이트 함수
+    async function updateBudgetAlertThresholdSetting(thresholdPercentage) {
+        const url = `/user/budget-alert-threshold-setting?thresholdPercentage=${thresholdPercentage}`;
+        try {
+            const response = await csrfFetch(url, {
+                method: 'PUT',
+            });
+
+            if (response.ok) {
+                console.log(`예산 알림 임계값 설정이 ${thresholdPercentage * 100}%로 성공적으로 업데이트되었습니다.`);
+            } else {
+                const errorText = await response.text();
+                console.error(`예산 알림 임계값 설정 업데이트 실패: ${errorText}`);
+                alert('예산 알림 임계값 설정 저장 실패: ' + errorText);
+            }
+        } catch (error) {
+            console.error('네트워크 오류:', error);
+            alert('네트워크 오류가 발생했습니다.');
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const globalAlertToggle = document.getElementById('globalAlertToggle');
+        if (globalAlertToggle) {
+            globalAlertToggle.addEventListener('change', () => {
+                const enabled = globalAlertToggle.checked;
+                updateGlobalAlertSetting(enabled);
+            });
+        }
+
+        const autoBudgetAdjustmentToggle = document.getElementById('autoBudgetAdjustmentToggle');
+        if (autoBudgetAdjustmentToggle) {
+            autoBudgetAdjustmentToggle.addEventListener('change', () => {
+                const enabled = autoBudgetAdjustmentToggle.checked;
+                updateAutoBudgetAdjustmentSetting(enabled);
+            });
+        }
+
+        // ✅ 월간 리포트 발송 버튼 이벤트 리스너
+        const sendReportBtn = document.getElementById('sendReportBtn');
+        if (sendReportBtn) {
+            sendReportBtn.addEventListener('click', async () => {
+                const userId = /*[[${userInfo.user_id}]]*/ 'defaultUserId'; // Thymeleaf를 통해 userId를 가져옴
+                const url = `/test/send-report/${userId}`;
+
+                // 버튼 비활성화 및 로딩 표시
+                sendReportBtn.disabled = true;
+                sendReportBtn.textContent = '발송 중...';
+
+                try {
+                    const response = await csrfFetch(url, { method: 'GET' });
+                    const resultText = await response.text();
+
+                    if (response.ok) {
+                        alert('리포트 발송 요청 성공! 이메일을 확인해주세요.');
+                    } else {
+                        alert('리포트 발송 실패: ' + resultText);
+                    }
+                } catch (error) {
+                    console.error('리포트 발송 네트워크 오류:', error);
+                    alert('리포트 발송 중 네트워크 오류가 발생했습니다.');
+                } finally {
+                    // 버튼 다시 활성화
+                    sendReportBtn.disabled = false;
+                    sendReportBtn.textContent = '지난달 리포트 이메일로 받기';
+                }
+            });
+        }
+
+        const budgetAlertThreshold = document.getElementById('budgetAlertThreshold'); // ID 변경됨
+        const thresholdValueDisplay = document.getElementById('thresholdValueDisplay');
+
+        if (budgetAlertThreshold && thresholdValueDisplay) {
+            // 초기 값 설정
+            thresholdValueDisplay.textContent = budgetAlertThreshold.value;
+
+            budgetAlertThreshold.addEventListener('input', () => {
+                thresholdValueDisplay.textContent = budgetAlertThreshold.value;
+            });
+
+            budgetAlertThreshold.addEventListener('change', () => {
+                const threshold = parseFloat(budgetAlertThreshold.value) / 100.0;
+                updateBudgetAlertThresholdSetting(threshold);
+            });
+        }
+    });
+
+    /*]]>*/
 </script>
+<script src="/js/notification.js"></script>
 
 </body>
 </html>

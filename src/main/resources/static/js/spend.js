@@ -32,6 +32,13 @@ async function csrfFetch(url, options = {}) {
 
 
 window.onload = () => {
+    // Set current month as default filter
+    const today = new Date();
+    const currentMonth = (today.getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = today.getFullYear();
+    filterMonth = `${currentYear}-${currentMonth}`;
+    document.getElementById('filterMonth').value = filterMonth; // Set the input field value
+
     if (!isAuthenticated) {
         document.getElementById('authNotice').classList.remove('hidden');
 

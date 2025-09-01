@@ -71,10 +71,15 @@ async function refreshBudgetList() {
         const data = await response.json();
         renderBudgetCards(data);
 
-        if (data && data.length > 0) {
-            adjustCpiBtn.disabled = false;
+        // Check if all budgets for the month are CPI adjusted
+        const allCpiAdjusted = data.length > 0 && data.every(budget => budget.lastAdjustedDate !== null);
+
+        if (allCpiAdjusted) {
+            adjustCpiBtn.disabled = true; // Keep disabled if all are adjusted
+        } else if (data.length > 0) {
+            adjustCpiBtn.disabled = false; // Enable if there are budgets and not all are adjusted
         } else {
-            adjustCpiBtn.disabled = true;
+            adjustCpiBtn.disabled = true; // Keep disabled if no budgets
         }
     } catch (error) {
         handleApiError(error, '조회');

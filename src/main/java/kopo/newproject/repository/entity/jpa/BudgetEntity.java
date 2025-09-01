@@ -67,6 +67,10 @@ public class BudgetEntity {
         this.totalBudget = totalBudget;
     }
 
+    public void setLastAdjustedDate(LocalDateTime lastAdjustedDate) {
+        this.lastAdjustedDate = lastAdjustedDate;
+    }
+
 }
 
 
