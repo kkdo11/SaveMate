@@ -21,8 +21,8 @@ public interface ISpendingService {
 
     boolean deleteSpending(String userId, String id);
 
-    Map<String, Integer> getTotalAmountGroupedByCategory(String userId);
-    Map<String, Integer> getTotalSpendingByMonth(String userId);
+    Map<String, Integer> getTotalAmountGroupedByCategory(String userId, YearMonth month);
+    Map<String, Integer> getTotalSpendingByMonth(String userId, YearMonth from, YearMonth to);
 
     BigDecimal calculateMonthlySpendingSum(String userId, int year, int month, String category) throws Exception;
 

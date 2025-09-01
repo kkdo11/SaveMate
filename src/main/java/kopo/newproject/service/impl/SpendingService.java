@@ -135,8 +135,11 @@ public class SpendingService implements ISpendingService {
     }
 
     @Override
-    public Map<String, Integer> getTotalAmountGroupedByCategory(String userId) {
-        List<SpendingEntity> spendings = spendingRepository.findByUserId(userId);
+    public Map<String, Integer> getTotalAmountGroupedByCategory(String userId, YearMonth month) {
+        LocalDate startOfMonth = month.atDay(1);
+        LocalDate endOfMonth = month.atEndOfMonth();
+
+        List<SpendingEntity> spendings = spendingRepository.findByUserIdAndDateBetween(userId, startOfMonth, endOfMonth);
 
         Map<String, Integer> result = new HashMap<>();
         for (SpendingEntity s : spendings) {
@@ -149,15 +152,20 @@ public class SpendingService implements ISpendingService {
 
 
     @Override
-    public Map<String, Integer> getTotalSpendingByMonth(String userId) {
-        List<SpendingEntity> spendings = spendingRepository.findByUserId(userId);
+    public Map<String, Integer> getTotalSpendingByMonth(String userId, YearMonth from, YearMonth to) {
+        List<SpendingEntity> allSpendings = spendingRepository.findByUserId(userId);
 
         Map<String, Integer> result = new HashMap<>();
-        for (SpendingEntity s : spendings) {
-            String monthKey = YearMonth.from(s.getDate()).toString(); // ex) "2025-03"
-            int amount = s.getAmount().intValue(); // ✅ BigDecimal → int 변환
-            result.put(monthKey, result.getOrDefault(monthKey, 0) + amount);
-        }
+        allSpendings.stream()
+                .filter(s -> {
+                    YearMonth spendingMonth = YearMonth.from(s.getDate());
+                    return !spendingMonth.isBefore(from) && !spendingMonth.isAfter(to);
+                })
+                .forEach(s -> {
+                    String monthKey = YearMonth.from(s.getDate()).toString(); // ex) "2025-03"
+                    int amount = s.getAmount().intValue(); // ✅ BigDecimal → int 변환
+                    result.put(monthKey, result.getOrDefault(monthKey, 0) + amount);
+                });
         return result;
     }
 

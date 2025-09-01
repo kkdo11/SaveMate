@@ -3,6 +3,7 @@ package kopo.newproject.service;
 import kopo.newproject.dto.BudgetDTO;
 import kopo.newproject.repository.entity.jpa.BudgetEntity;
 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public interface IBudgetService {
     List<BudgetEntity> getBudgetsByUserId(String userId);
     List<BudgetEntity> getBudgetsByUserIdAndYearMonth(String userId, int year, int month);
 
-    Map<String, Integer> getTotalBudgetByMonth(String userId);
+    Map<String, Integer> getTotalBudgetByMonth(String userId, YearMonth from, YearMonth to);
 
     /**
      * 최신 소비자물가지수(CPI) 상승률을 반영하여 해당 사용자의 현재 월 모든 예산을 조정합니다.

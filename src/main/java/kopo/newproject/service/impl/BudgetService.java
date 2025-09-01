@@ -186,15 +186,20 @@ public class BudgetService implements IBudgetService {
     }
 
     @Override
-    public Map<String, Integer> getTotalBudgetByMonth(String userId) {
-        List<BudgetEntity> budgets = budgetRepository.findAllByUserId(userId);
+    public Map<String, Integer> getTotalBudgetByMonth(String userId, YearMonth from, YearMonth to) {
+        List<BudgetEntity> allBudgets = budgetRepository.findAllByUserId(userId);
 
         Map<String, Integer> result = new HashMap<>();
-        for (BudgetEntity b : budgets) {
-            String key = String.format("%04d-%02d", b.getYear(), b.getMonth());
-            int amount = b.getTotalBudget() != null ? b.getTotalBudget().intValue() : 0;
-            result.put(key, result.getOrDefault(key, 0) + amount);
-        }
+        allBudgets.stream()
+                .filter(b -> {
+                    YearMonth budgetMonth = YearMonth.of(b.getYear(), b.getMonth());
+                    return !budgetMonth.isBefore(from) && !budgetMonth.isAfter(to);
+                })
+                .forEach(b -> {
+                    String key = String.format("%04d-%02d", b.getYear(), b.getMonth());
+                    int amount = b.getTotalBudget() != null ? b.getTotalBudget().intValue() : 0;
+                    result.put(key, result.getOrDefault(key, 0) + amount);
+                });
         return result;
     }
 

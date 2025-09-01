@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,28 +30,27 @@ public class DashBoardAPIController {
         String userId = getCurrentUserId();
 
         try {
-            // 1. 카테고리별 사용 금액 (pie chart)
-            Map<String, Integer> categoryUsage = spendingService.getTotalAmountGroupedByCategory(userId);
+            // 1. 카테고리별 사용 금액 (pie chart) - 현재 월 기준
+            YearMonth currentMonth = YearMonth.now(ZoneId.of("Asia/Seoul"));
+            Map<String, Integer> categoryUsage = spendingService.getTotalAmountGroupedByCategory(userId, currentMonth);
 
-            // 2. 월별 예산 vs 사용 금액 (bar chart)
+            // 2. 월별 예산 vs 사용 금액 (bar chart) - 최근 6개월
+            YearMonth endMonth = YearMonth.now(ZoneId.of("Asia/Seoul"));
+            YearMonth startMonth = endMonth.minusMonths(5);
+
+            Map<String, Integer> monthlyBudgetMap = budgetService.getTotalBudgetByMonth(userId, startMonth, endMonth);
+            Map<String, Integer> monthlyUsedMap = spendingService.getTotalSpendingByMonth(userId, startMonth, endMonth);
+
             List<Map<String, Object>> monthlyData = new ArrayList<>();
-            Map<String, Integer> monthlyBudgetMap = budgetService.getTotalBudgetByMonth(userId);     // "2025-03" → 400000
-            Map<String, Integer> monthlyUsedMap = spendingService.getTotalSpendingByMonth(userId);   // "2025-03" → 378000
-
-            Set<String> allMonths = new HashSet<>();
-            allMonths.addAll(monthlyBudgetMap.keySet());
-            allMonths.addAll(monthlyUsedMap.keySet());
-
-            List<String> sortedMonths = allMonths.stream()
-                    .sorted() // 오름차순 정렬
-                    .collect(Collectors.toList());
-
-            for (String month : sortedMonths) {
+            YearMonth currentMonthIter = startMonth;
+            while (!currentMonthIter.isAfter(endMonth)) {
+                String monthKey = currentMonthIter.toString();
                 Map<String, Object> row = new HashMap<>();
-                row.put("month", month);
-                row.put("budget", monthlyBudgetMap.getOrDefault(month, 0));
-                row.put("used", monthlyUsedMap.getOrDefault(month, 0));
+                row.put("month", monthKey);
+                row.put("budget", monthlyBudgetMap.getOrDefault(monthKey, 0));
+                row.put("used", monthlyUsedMap.getOrDefault(monthKey, 0));
                 monthlyData.add(row);
+                currentMonthIter = currentMonthIter.plusMonths(1);
             }
 
             // 🔥 리턴 형식
