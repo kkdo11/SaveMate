@@ -53,21 +53,21 @@ public class AgeCalculator {
     public static String getAgeGroup(int age) {
         if (age < 0) {
             log.warn("Invalid age ({}) provided. Cannot determine age group.", age);
-            return "알 수 없음";
+            return "Unknown";
         } else if (age < 20) {
-            return "10대";
+            return "10s";
         } else if (age < 30) {
-            return "20대";
+            return "20s";
         } else if (age < 40) {
-            return "30대";
+            return "30s";
         } else if (age < 50) {
-            return "40대";
+            return "40s";
         } else if (age < 60) {
-            return "50대";
+            return "50s";
         } else if (age < 70) {
-            return "60대";
+            return "60s";
         } else {
-            return "70대 이상";
+            return "70s_and_up";
         }
     }
 }

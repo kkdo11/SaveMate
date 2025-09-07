@@ -341,6 +341,26 @@ public class UserInfoController {
         return "user/myPage";
     }
 
+    @GetMapping("/info")
+    @ResponseBody
+    public ResponseEntity<UserInfoDTO> getUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            String userId = userDetails.getUsername();
+            UserInfoDTO userInfo = userInfoService.findByUserId(userId);
+            if (userInfo != null) {
+                return ResponseEntity.ok(userInfo);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            log.error("Error fetching user info", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 
 @PostMapping("/changePassword")

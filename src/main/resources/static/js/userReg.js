@@ -117,6 +117,8 @@ $(document).ready(function () {
         const password2 = $("#password2").val().trim();
         const email = $("#email").val().trim();
         const name = $("#name").val().trim();
+        const gender = $("#gender").val();
+        const birthDate = $("#birthDate").val();
 
         let valid = true;
 
@@ -151,7 +153,7 @@ $(document).ready(function () {
         $.ajax({
             url: "/user/insertUserInfo",
             type: "POST",
-            data: { user_id, password, email, name },
+            data: { user_id, password, email, name, gender, birthDate },
             success: function (res) {
                 if (res.result === 1) {
                     alert(res.msg);

@@ -682,6 +682,8 @@ async function requestPublicDataComparison(event) {
     try {
         // 1. 사용자 정보 가져오기 (성별, 생년월일)
         const userInfo = await getUserInfo();
+        console.log("User Info:", userInfo); // 사용자 정보 로그
+
         if (!userInfo || !userInfo.gender || !userInfo.birthDate) {
             showToast('error', '사용자 정보 부족', '프로필에 성별과 생년월일 정보가 필요합니다.');
             return;
@@ -702,6 +704,7 @@ async function requestPublicDataComparison(event) {
         let userSpendingData = null;
         if (userSpendingResponse.status === 'fulfilled' && userSpendingResponse.value.ok) {
             userSpendingData = await userSpendingResponse.value.json();
+            console.log("User Spending Data:", userSpendingData); // 사용자 소비 데이터 로그
         } else {
             showToast('info', '소비 데이터 부족', `해당 월의 소비 데이터가 없어 비교할 수 없습니다.`);
             return;
@@ -716,6 +719,7 @@ async function requestPublicDataComparison(event) {
         let aggregatedData = null;
         if (aggregatedDataResponse.status === 'fulfilled' && aggregatedDataResponse.value.ok) {
             aggregatedData = await aggregatedDataResponse.value.json();
+            console.log("Aggregated Peer Data:", aggregatedData); // 또래 집계 데이터 로그
         } else {
             showToast('info', '비교 데이터 없음', '아직 또래 평균 소비 데이터가 없어요. 내 소비 내역만 표시됩니다.');
         }
@@ -741,13 +745,29 @@ async function requestPublicDataComparison(event) {
  * TODO: 실제로는 서버 API를 호출하여 사용자 정보를 가져와야 합니다.
  */
 async function getUserInfo() {
-    // 이 부분은 실제 API 엔드포인트로 교체해야 합니다.
-    // 예: return fetch('/api/user/info').then(res => res.json());
-    return Promise.resolve({
-        name: "김도원",
-        birthDate: "1998-03-12", // 예시 생년월일
-        gender: "M" // 예시 성별 (M: 남성, F: 여성)
-    });
+    try {
+        const response = await fetch('/user/info', {
+            headers: {
+                [csrfHeader]: csrfToken,
+                'Accept': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            if (response.status === 401) {
+                // 세션이 만료되었거나 로그인하지 않은 경우
+                console.warn('User not authenticated, redirecting to login.');
+                // 로그인 페이지로 리디렉션하거나 로그인 모달을 표시할 수 있습니다.
+                // window.location.href = '/user/login';
+                return null;
+            }
+            throw new Error('Failed to fetch user info');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error in getUserInfo:', error);
+        showToast('error', '사용자 정보 조회 실패', '사용자 정보를 가져오는 데 실패했습니다.');
+        return null; // 오류 발생 시 null 반환
+    }
 }
 
 /**
@@ -762,13 +782,13 @@ function getAgeGroup(birthDate) {
         age--;
     }
 
-    if (age < 20) return '10대';
-    if (age < 30) return '20대';
-    if (age < 40) return '30대';
-    if (age < 50) return '40대';
-    if (age < 60) return '50대';
-    if (age < 70) return '60대';
-    return '70대 이상';
+    if (age < 20) return '10s';
+    if (age < 30) return '20s';
+    if (age < 40) return '30s';
+    if (age < 50) return '40s';
+    if (age < 60) return '50s';
+    if (age < 70) return '60s';
+    return '70s_and_up';
 }
 
 /**
