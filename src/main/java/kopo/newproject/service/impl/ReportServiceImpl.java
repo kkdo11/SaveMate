@@ -236,6 +236,12 @@ public class ReportServiceImpl implements IReportService {
     private String buildReportHtml(MonthlyReportDTO reportDTO) {
         Context context = new Context();
         context.setVariable("report", reportDTO);
+
+        // 고정된 URL 생성
+        context.setVariable("spendUrl", "https://aifinance.ai.kr/spending/page");
+        context.setVariable("budgetUrl", "https://aifinance.ai.kr/budget/page");
+        context.setVariable("goalUrl", "https://aifinance.ai.kr/goal/page");
+
         return templateEngine.process("mail/monthlyReport", context);
     }
 }

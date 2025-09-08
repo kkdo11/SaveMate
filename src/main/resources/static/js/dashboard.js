@@ -89,7 +89,7 @@ function renderBarChart(monthlyData) {
                     data: monthlyData.map(item => item.budget)
                 },
                 {
-                    label: '사용',
+                    label: '소비',
                     backgroundColor: '#EF4444',
                     data: monthlyData.map(item => item.used)
                 }

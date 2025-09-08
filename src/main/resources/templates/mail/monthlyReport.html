@@ -9,7 +9,7 @@
 <div style="max-width: 680px; margin: auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #dee2e6;">
 
     <!-- Header -->
-    <div style="background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 24px; text-align: center;">
+    <div style="background-color: #6a11cb; background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 24px; text-align: center;">
         <h1 style="margin: 0; font-size: 24px;" th:text="${report.reportMonth.year} + '년 ' + ${report.reportMonth.monthValue} + '월'"></h1>
         <p style="margin: 5px 0 0; font-size: 16px;">월간 소비 리포트</p>
     </div>
@@ -21,30 +21,40 @@
         <!-- Section 1: 이달의 소비 요약 -->
         <div style="margin-top: 30px;">
             <h2 style="font-size: 20px; border-bottom: 2px solid #6a11cb; padding-bottom: 10px; margin-bottom: 20px;">이달의 소비 요약</h2>
-            <div style="display: flex; justify-content: space-between; text-align: center; gap: 15px;">
-                <!-- 총 지출 -->
-                <div style="width: 48%; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
-                    <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">총 지출</p>
-                    <p style="margin: 8px 0; font-size: 22px; font-weight: bold; color: #d9534f;" th:text="'₩' + ${#numbers.formatDecimal(report.totalSpending, 0, 'COMMA', 0, 'POINT')}"></p>
-                    <div th:if="${report.previousMonthTotalSpending.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 12px; color: #6c757d;">
-                        <span th:if="${report.spendingChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #d9534f;">▲</span>
-                        <span th:if="${report.spendingChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) < 0}" style="color: #2575fc;">▼</span>
-                        <span th:text="${#numbers.formatDecimal(report.spendingChangePercentage.abs(), 1, 'COMMA', 1, 'POINT')} + '%'"></span>
-                        <span> 지난달 대비</span>
-                    </div>
-                </div>
-                <!-- 총 예산 -->
-                <div style="width: 48%; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
-                    <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">총 예산</p>
-                    <p style="margin: 8px 0; font-size: 22px; font-weight: bold; color: #2575fc;" th:text="'₩' + ${#numbers.formatDecimal(report.totalBudget, 0, 'COMMA', 0, 'POINT')}"></p>
-                    <div th:if="${report.previousMonthTotalBudget.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 12px; color: #6c757d;">
-                        <span th:if="${report.budgetChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="color: #d9534f;">▲</span>
-                        <span th:if="${report.budgetChangePercentage.compareTo(T(java.math.BigDecimal).ZERO) < 0}" style="color: #2575fc;">▼</span>
-                        <span th:text="${#numbers.formatDecimal(report.budgetChangePercentage.abs(), 1, 'COMMA', 1, 'POINT')} + '%'"></span>
-                        <span> 지난달 대비</span>
-                    </div>
-                </div>
-            </div>
+            
+            <!-- Table-based layout for email client compatibility -->
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="text-align: center;">
+                <tr>
+                    <td width="48%" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; vertical-align: top;">
+                        <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">총 소비</p>
+                        <p style="margin: 8px 0; font-size: 22px; font-weight: bold; color: #d9534f;" th:text="'₩' + ${#numbers.formatDecimal(report.totalSpending, 0, 'COMMA', 0, 'POINT')}"></p>
+                        <div th:if="${report.previousMonthTotalSpending.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 12px; color: #6c757d;">
+                            <th:block th:switch="${report.spendingChangePercentage.compareTo(T(java.math.BigDecimal).ZERO)}">
+                                <span th:case="1" style="color: #d9534f;">▲</span>
+                                <span th:case="-1" style="color: #2575fc;">▼</span>
+                                <span th:case="0">-</span>
+                            </th:block>
+                            <span th:text="${#numbers.formatDecimal(report.spendingChangePercentage.abs(), 1, 'COMMA', 1, 'POINT')} + '%'"></span>
+                            <span> 지난달 대비</span>
+                        </div>
+                    </td>
+                    <td width="4%"></td> <!-- Spacer -->
+                    <td width="48%" style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; vertical-align: top;">
+                        <p style="margin: 0; color: #495057; font-size: 14px; font-weight: 500;">총 예산</p>
+                        <p style="margin: 8px 0; font-size: 22px; font-weight: bold; color: #2575fc;" th:text="'₩' + ${#numbers.formatDecimal(report.totalBudget, 0, 'COMMA', 0, 'POINT')}"></p>
+                        <div th:if="${report.previousMonthTotalBudget.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 12px; color: #6c757d;">
+                            <th:block th:switch="${report.budgetChangePercentage.compareTo(T(java.math.BigDecimal).ZERO)}">
+                                <span th:case="1" style="color: #d9534f;">▲</span>
+                                <span th:case="-1" style="color: #2575fc;">▼</span>
+                                <span th:case="0">-</span>
+                            </th:block>
+                            <span th:text="${#numbers.formatDecimal(report.budgetChangePercentage.abs(), 1, 'COMMA', 1, 'POINT')} + '%'"></span>
+                            <span> 지난달 대비</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
             <!-- 예산 사용률 -->
             <div style="margin-top: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -52,15 +62,17 @@
                     <span style="font-size: 14px; font-weight: bold; color: #343a40;" th:text="${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></span>
                 </div>
                 <div style="background-color: #e9ecef; border-radius: 8px; height: 20px; overflow: hidden;">
-                    <div th:style="'background: linear-gradient(to right, #f0ad4e, #f9d423); width: ' + ${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%; height: 20px; text-align: center; color: white; font-weight: bold; line-height: 20px; font-size: 12px;'" 
-                         th:text="${report.budgetAchievementRate.compareTo(T(java.math.BigDecimal).valueOf(10)) >= 0 ? #numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT') + '%' : ''}"></div>
+                    <div th:if="${report.budgetAchievementRate != null}"
+                         th:style="'background: linear-gradient(to right, #f0ad4e, #f9d423); width: ' + ${#numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT')} + '%; height: 20px; text-align: center; color: white; font-weight: bold; line-height: 20px; font-size: 12px;'"
+                         th:text="${report.budgetAchievementRate.compareTo(T(java.math.BigDecimal).valueOf(10.0)) >= 0 ? #numbers.formatDecimal(report.budgetAchievementRate, 1, 'COMMA', 1, 'POINT') + '%' : ''}">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Section 2: TOP 3 지출 카테고리 -->
+        <!-- Section 2: TOP 3 소비 카테고리 -->
         <div style="margin-top: 30px;" th:if="${not #lists.isEmpty(report.topSpendingCategories)}">
-            <h2 style="font-size: 20px; border-bottom: 2px solid #6a11cb; padding-bottom: 10px; margin-bottom: 20px;">TOP 3 지출 카테고리</h2>
+            <h2 style="font-size: 20px; border-bottom: 2px solid #6a11cb; padding-bottom: 10px; margin-bottom: 20px;">TOP 3 소비 카테고리</h2>
             <div th:each="cat : ${report.topSpendingCategories}" style="margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
                     <span style="font-weight: 500;" th:text="${cat.category}"></span>
@@ -84,7 +96,7 @@
             <div th:each="goal : ${report.goalStatuses}" style="margin-bottom: 15px;">
                 <p style="margin: 0 0 8px; font-weight: 500; font-size: 16px;" th:text="${goal.goalName}"></p>
                 <div style="background-color: #e9ecef; border-radius: 8px; height: 15px; margin-bottom: 8px;">
-                    <div th:style="'background: linear-gradient(to right, #28a745, #20c997); width: ' + ${goal.achievementRate} + '%; height: 15px; border-radius: 8px;'"></div>
+                    <div th:style="'background-color: #28a745; background: linear-gradient(to right, #28a745, #20c997); width: ' + ${goal.achievementRate} + '%; height: 15px; border-radius: 8px;'"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6c757d;">
                     <span th:text="'달성률: ' + ${#numbers.formatDecimal(goal.achievementRate, 1, 'COMMA', 1, 'POINT')} + '%'"></span>
@@ -93,14 +105,15 @@
             </div>
         </div>
         <div th:if="${#lists.isEmpty(report.goalStatuses)}" style="text-align: center; color: #6c757d; padding: 20px; background-color: #f8f9fa; border-radius: 8px; margin-top: 30px;">
-            진행 중인 목표가 없습니다. 지금 새로운 목표를 세워보는 건 어떨까요?
+            진행 중인 목표가 없습니다. <a th:href="${goalUrl}" style="color: #2575fc; text-decoration: none; font-weight: 600;">지금 새로운 목표를 세워보는 건 어떨까요?</a>
         </div>
 
         <!-- Section 5: Call to Action -->
         <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #dee2e6;">
             <h2 style="font-size: 20px; margin-bottom: 20px;">새로운 시작을 위한 제안</h2>
-            <a href="https://example.com/spending" style="background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">자세한 지출 내역 확인하기</a>
-            <a href="https://example.com/budget" style="background-color: #6c757d; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">다음 달 예산 설정하기</a>
+            <a th:href="${spendUrl}" style="background-color: #6a11cb; background: linear-gradient(to right, #6a11cb, #2575fc); color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">자세한 소비 내역 확인하기</a>
+            <a th:href="${budgetUrl}" style="background-color: #6c757d; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">다음 달 예산 설정하기</a>
+            <a th:href="${goalUrl}" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-block; margin: 5px;">새로운 저축목표 설정하기</a>
         </div>
     </div>
 
