@@ -66,7 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/user/login", "/user/loginProc", "/user/userRegForm",
                                 "/user/insertUserInfo", "/user/getUserIdExists",
-                                "/user/findPwd", "/user/findUserId", "/user/resetPassword",
+                                "/user/findPWD", "/user/findId", "/user/resetPassword",
                                 "/user/sendVerificationEmail", "/user/getEmailExists", "/user/verifyEmailCode",
                                 "/dashboard/page", "/spending/page", "/budget/page", "/goal/page", "/ai/page","api/**"
                         ).permitAll()
