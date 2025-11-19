@@ -27,7 +27,7 @@
 | **Database** | MariaDB, MongoDB |
 | **Frontend**| Thymeleaf, JavaScript, HTML5/CSS3 |
 | **Build** | Gradle |
-| **Etc** | Lombok, JUnit5 |
+| **Etc** | Lombok |
 
 ## 🏗️ 아키텍처
 
